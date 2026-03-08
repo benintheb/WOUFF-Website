@@ -1,25 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
+import { SYSTEM_CONFIG } from './config'
 
-const POTEAR_ASCII = `
- ██████╗  ██████╗ ████████╗███████╗ █████╗ ██████╗ 
- ██╔══██╗██╔═══██╗╚══██╔══╝██╔════╝██╔══██╗██╔══██╗
- ██████╔╝██║   ██║   ██║   █████╗  ███████║██████╔╝
- ██╔═══╝ ██║   ██║   ██║   ██╔══╝  ██╔══██║██╔══██╗
- ██║     ╚██████╔╝   ██║   ███████╗██║  ██║██║  ██║
- ╚═╝      ╚═════╝    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
-`
+type PageID = 'MAIN' | keyof typeof SYSTEM_CONFIG.PAGES
 
-const COMMANDS = [
-  'DIR /LINKS',
-  'VIEW LATEST_MEDIA.MP4',
-  'LOAD DISCOGRAPHY.EXE',
-  'ABOUT POTEAR',
-  'ABOUT WOUFF'
-]
+interface ListingItem {
+  date: string
+  type: string
+  name: string
+  id?: PageID
+  url?: string
+}
 
 function App() {
+  // --- STATE ---
   const [bootStep, setBootStep] = useState<number>(0)
   const [isReady, setIsReady] = useState<boolean>(false)
+  const [currentPage, setCurrentPage] = useState<PageID>('MAIN')
+  const [visibleLines, setVisibleLines] = useState<number>(0)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
   const [commandInput, setCommandInput] = useState<string>('')
   const [suggestion, setSuggestion] = useState<string>('')
@@ -27,21 +24,73 @@ function App() {
   
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // --- DERIVED DATA ---
+  const currentItems = useMemo(() => {
+    if (currentPage === 'MAIN') {
+      return SYSTEM_CONFIG.COMMANDS as ListingItem[]
+    }
+    
+    const pageItems = SYSTEM_CONFIG.PAGES[currentPage] as ListingItem[]
+    // Add ".." navigation to sub-pages
+    return [{ date: '03/08/2026', type: '<DIR>', name: '..' }, ...pageItems]
+  }, [currentPage])
+
+  const availableCommands = useMemo(() => {
+    const names = currentItems.map(item => item.name.toUpperCase())
+    if (currentPage !== 'MAIN') {
+      names.push('CD ..', '..')
+    }
+    return names
+  }, [currentItems, currentPage])
+
+  // --- EFFECTS ---
+  
+  // Apply Config Colors to root
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--terminal-green', SYSTEM_CONFIG.COLORS.PRIMARY);
+    root.style.setProperty('--terminal-dim', SYSTEM_CONFIG.COLORS.DIMMED);
+    root.style.setProperty('--terminal-bg', SYSTEM_CONFIG.COLORS.BACKGROUND);
+  }, []);
+
+  // BIOS Boot Sequence
   useEffect(() => {
     if (bootStep < 5) {
-      const timer = setTimeout(() => setBootStep(bootStep + 1), 200 + Math.random() * 500)
+      const { BOOT_STEP_MIN, BOOT_STEP_MAX } = SYSTEM_CONFIG.SPEEDS
+      const timer = setTimeout(() => setBootStep(bootStep + 1), 
+        BOOT_STEP_MIN + Math.random() * (BOOT_STEP_MAX - BOOT_STEP_MIN))
       return () => clearTimeout(timer)
     } else {
-      const timer = setTimeout(() => setIsReady(true), 1000)
+      const timer = setTimeout(() => setIsReady(true), SYSTEM_CONFIG.SPEEDS.BOOT_READY_DELAY)
       return () => clearTimeout(timer)
     }
   }, [bootStep])
 
+  // Sequential Page Loading (Line-by-line)
+  useEffect(() => {
+    if (isReady) {
+      setVisibleLines(0)
+      const timer = setInterval(() => {
+        setVisibleLines(prev => {
+          if (prev < currentItems.length + 1) { // +1 for the header
+            return prev + 1
+          }
+          clearInterval(timer)
+          return prev
+        })
+      }, SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD)
+      return () => clearInterval(timer)
+    }
+  }, [isReady, currentPage, currentItems.length])
+
+  // Focus input on ready
   useEffect(() => {
     if (isReady && inputRef.current) {
       inputRef.current.focus()
     }
-  }, [isReady])
+  }, [isReady, currentPage])
+
+  // --- HANDLERS ---
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase()
@@ -49,7 +98,7 @@ function App() {
     setErrorLine('')
 
     if (val.length > 0) {
-      const found = COMMANDS.find(cmd => cmd.startsWith(val))
+      const found = availableCommands.find(cmd => cmd.startsWith(val))
       setSuggestion(found ? found : '')
     } else {
       setSuggestion('')
@@ -67,18 +116,40 @@ function App() {
       executeCommand(commandInput)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : COMMANDS.length - 1))
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : currentItems.length - 1))
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev < COMMANDS.length - 1 ? prev + 1 : 0))
+      setSelectedIndex(prev => (prev < currentItems.length - 1 ? prev + 1 : 0))
     }
   }
 
   const executeCommand = (cmd: string) => {
     const cleanCmd = cmd.trim().toUpperCase()
-    if (COMMANDS.includes(cleanCmd)) {
-      // Logic for navigation to specific content pages will go here
-      console.log('Executing:', cleanCmd)
+    
+    // Check for ".." or "CD .."
+    if (cleanCmd === '..' || cleanCmd === 'CD ..') {
+      if (currentPage !== 'MAIN') {
+        setCurrentPage('MAIN')
+        setSelectedIndex(0)
+        setCommandInput('')
+        setSuggestion('')
+        return
+      }
+    }
+
+    // Find the item by name
+    const targetItem = currentItems.find(item => item.name.toUpperCase() === cleanCmd)
+
+    if (targetItem) {
+      if (targetItem.name === '..') {
+        setCurrentPage('MAIN')
+        setSelectedIndex(0)
+      } else if (targetItem.url) {
+        window.open(targetItem.url, '_blank')
+      } else if (targetItem.id) {
+        setCurrentPage(targetItem.id)
+        setSelectedIndex(0)
+      }
       setCommandInput('')
       setSuggestion('')
     } else if (cleanCmd.length > 0) {
@@ -90,8 +161,38 @@ function App() {
 
   const handleOptionClick = (index: number) => {
     setSelectedIndex(index)
-    executeCommand(COMMANDS[index])
+    const item = currentItems[index]
+    executeCommand(item.name)
   }
+
+  // --- RENDER HELPERS ---
+
+  const renderTableHead = () => (
+    <div style={{ display: 'grid', gridTemplateColumns: '150px 100px 1fr', marginBottom: '0.5rem', borderBottom: '1px dashed var(--terminal-dim)', paddingBottom: '2px' }} className="dim">
+      <span>DATE</span>
+      <span>TYPE</span>
+      <span>NAME</span>
+    </div>
+  )
+
+  const renderRow = (item: ListingItem, index: number) => (
+    <div 
+      key={`${item.name}-${index}`}
+      onClick={() => handleOptionClick(index)}
+      style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '150px 100px 1fr',
+        cursor: 'pointer',
+        backgroundColor: selectedIndex === index ? 'var(--terminal-green)' : 'transparent',
+        color: selectedIndex === index ? 'var(--terminal-bg)' : 'var(--terminal-green)',
+        padding: '2px 0'
+      }}
+    >
+      <span>{item.date}</span>
+      <span>{item.type}</span>
+      <span>{item.name}</span>
+    </div>
+  )
 
   return (
     <div className="monitor">
@@ -107,32 +208,29 @@ function App() {
       ) : (
         <div className="terminal-content">
           <header className="ascii-header">
-            {POTEAR_ASCII}
+            {SYSTEM_CONFIG.HEADER.TEXT}
           </header>
 
-          <nav className="nav-list" style={{ marginTop: '2rem' }}>
-            {COMMANDS.map((cmd, idx) => (
-              <div 
-                key={cmd}
-                onClick={() => handleOptionClick(idx)}
-                style={{ 
-                  cursor: 'pointer',
-                  backgroundColor: selectedIndex === idx ? 'var(--terminal-green)' : 'transparent',
-                  color: selectedIndex === idx ? 'var(--terminal-bg)' : 'var(--terminal-green)',
-                  padding: '2px 8px',
-                  display: 'inline-block',
-                  clear: 'both'
-                }}
-              >
-                {cmd}
-              </div>
-            ))}
-          </nav>
+          <div className="directory-listing" style={{ marginTop: '1rem' }}>
+            <div className="dim" style={{ marginBottom: '1rem' }}>
+              Volume in drive C is WOUFF_ROOT<br/>
+              Directory of C:\{currentPage === 'MAIN' ? 'WOUFF' : currentPage}
+            </div>
+
+            {visibleLines > 0 && renderTableHead()}
+            
+            {currentItems.map((item, idx) => {
+              if (idx < visibleLines - 1) {
+                return renderRow(item, idx)
+              }
+              return null
+            })}
+          </div>
 
           <footer style={{ marginTop: 'auto', paddingTop: '2rem' }}>
             {errorLine && <div style={{ marginBottom: '0.5rem' }}>{errorLine}</div>}
             <div className="prompt-line" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-              <span>C:\\WOUFF&gt;&nbsp;</span>
+              <span>C:\{currentPage === 'MAIN' ? 'WOUFF' : currentPage}&gt;&nbsp;</span>
               <div style={{ position: 'relative', flex: 1 }}>
                 <input
                   ref={inputRef}
@@ -170,7 +268,7 @@ function App() {
               </div>
             </div>
             <div style={{ marginTop: '1rem', borderTop: '1px solid var(--terminal-dim)', paddingTop: '0.5rem', fontSize: '1rem' }} className="dim">
-              (C) 2026 WOUFF. ALL RIGHTS RESERVED.
+              {SYSTEM_CONFIG.FOOTER.COPYRIGHT}
             </div>
           </footer>
         </div>
