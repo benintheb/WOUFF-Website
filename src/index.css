@@ -1,0 +1,108 @@
+:root {
+  --terminal-green: #00ff00;
+  --terminal-dim: #00aa00;
+  --terminal-bg: #000000;
+  --font-family: 'VT323', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--terminal-bg);
+  color: var(--terminal-green);
+  font-family: var(--font-family);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CRT Scanline Effect */
+body::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 1000;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The Monitor Layout */
+.monitor {
+  width: 100%;
+  height: 100%;
+  max-width: 1200px;
+  max-height: 900px;
+  padding: 40px 60px; /* Top/Bottom and Left/Right padding for desktop */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .monitor {
+    padding: 20px 0; /* Keep top/bottom, remove left/right on mobile */
+  }
+  
+  body {
+    font-size: 1.2rem;
+  }
+}
+
+.terminal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  background-color: var(--terminal-green);
+  color: var(--terminal-bg);
+}
+
+.blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from, to { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.dim {
+  color: var(--terminal-dim);
+}
+
+.ascii-header {
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: pre;
+  margin-bottom: 2rem;
+  color: var(--terminal-green);
+}
