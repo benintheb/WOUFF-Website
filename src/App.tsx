@@ -25,14 +25,14 @@ function App() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   // --- DERIVED DATA ---
-  const currentItems = useMemo(() => {
+  const currentItems = useMemo((): ListingItem[] => {
     if (currentPage === 'MAIN') {
-      return SYSTEM_CONFIG.COMMANDS as ListingItem[]
+      return [...SYSTEM_CONFIG.COMMANDS] as ListingItem[]
     }
     
-    const pageItems = SYSTEM_CONFIG.PAGES[currentPage] as ListingItem[]
+    const pageItems = SYSTEM_CONFIG.PAGES[currentPage]
     // Add ".." navigation to sub-pages
-    return [{ date: '03/08/2026', type: '<DIR>', name: '..' }, ...pageItems]
+    return [{ date: '03/08/2026', type: '<DIR>', name: '..' }, ...pageItems] as ListingItem[]
   }, [currentPage])
 
   const availableCommands = useMemo(() => {
