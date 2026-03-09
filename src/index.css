@@ -1,10 +1,10 @@
 :root {
-  --terminal-green: #00ff00;
-  --terminal-dim: #00aa00;
+  --terminal-green: #55D43F;
+  --terminal-dim: #3A912B;
   --terminal-bg: #000000;
   --font-family: 'VT323', monospace;
   --scanline-opacity: 0.25;
-  --glow-intensity: 0 0 10px rgba(0, 255, 0, 0.4);
+  --glow-intensity: 0 0 10px rgba(85, 212, 63, 0.4);
   --header-margin-bottom: 2rem;
   
   /* Layout Widths - Driven by ASCII Header Width */

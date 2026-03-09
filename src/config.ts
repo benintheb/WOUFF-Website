@@ -14,15 +14,15 @@ export const SYSTEM_CONFIG = {
 
   // Visual Aesthetics & Effects
   COLORS: {
-    PRIMARY: '#00FF00',    // Classic Terminal Green
-    DIMMED: '#00AA00',     // Dimmed Green for secondary info
+    PRIMARY: '#55D43F',    // Bright Forest Green (Balanced Visibility)
+    DIMMED: '#3A912B',     // Muted Forest Green
     BACKGROUND: '#000000', // Absolute Black
   },
 
   VISUALS: {
     FONT_FAMILY: "'VT323', monospace",
     SCANLINE_OPACITY: 0.25,
-    GLOW_INTENSITY: '0 0 10px rgba(0, 255, 0, 0.4)',
+    GLOW_INTENSITY: '0 0 10px rgba(85, 212, 63, 0.4)',
     LAYOUT: {
       DATE_COL_WIDTH: '1fr', // Spaced evenly
       TYPE_COL_WIDTH: '1fr', // Spaced evenly
