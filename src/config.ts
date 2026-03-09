@@ -9,7 +9,7 @@ export const SYSTEM_CONFIG = {
   METADATA: {
     TITLE: 'WOUFF | POTEAR',
     DESCRIPTION: 'Official website of WOUFF/Potear. A minimal, artistic landing page for musical projects.',
-    FAVICON: '/favicon.ico', // Ensure this file exists in the public folder
+    FAVICON: '/favicon.ico',
   },
 
   // Visual Aesthetics & Effects
@@ -20,22 +20,22 @@ export const SYSTEM_CONFIG = {
   },
 
   VISUALS: {
-    FONT_FAMILY: "'VT323', monospace", // The primary monospace font stack
-    SCANLINE_OPACITY: 0.25,             // Opacity of the horizontal CRT scanlines (0.0 to 1.0)
-    GLOW_INTENSITY: '0 0 10px rgba(0, 255, 0, 0.4)', // Text bloom/glow effect
+    FONT_FAMILY: "'VT323', monospace",
+    SCANLINE_OPACITY: 0.25,
+    GLOW_INTENSITY: '0 0 10px rgba(0, 255, 0, 0.4)',
     LAYOUT: {
-      DATE_COL_WIDTH: '150px', // Width of the DATE column in listings
-      TYPE_COL_WIDTH: '100px', // Width of the TYPE column in listings
-      NAME_COL_WIDTH: '1fr',   // Width of the NAME column (flexible)
+      DATE_COL_WIDTH: '150px',
+      TYPE_COL_WIDTH: '100px',
+      NAME_COL_WIDTH: '1fr',
     }
   },
 
   // Timing & Speeds (in milliseconds)
   SPEEDS: {
-    BOOT_STEP_MIN: 200,    // Minimum delay between BIOS boot steps
-    BOOT_STEP_MAX: 700,    // Maximum delay between BIOS boot steps
-    BOOT_READY_DELAY: 1000, // Wait time after BIOS finishes before showing terminal
-    PAGE_LINE_LOAD: 70,    // Speed at which directory listing lines appear
+    BOOT_STEP_MIN: 200,
+    BOOT_STEP_MAX: 700,
+    BOOT_READY_DELAY: 1000,
+    PAGE_LINE_LOAD: 50,    // Speed for sequential loading
   },
 
   // BIOS Boot Sequence Text
@@ -50,7 +50,7 @@ export const SYSTEM_CONFIG = {
 
   // System Environment & Labels
   SYSTEM: {
-    VOLUME_LABEL: 'Volume in drive C is WOUFF_ROOT',
+    VOLUME_LABEL: 'VOLUME IN DRIVE C IS WOUFF_ROOT',
     DRIVE_LETTER: 'C:',
     ROOT_PATH: 'WOUFF',
     PROMPT_SYMBOL: '>',
@@ -63,7 +63,8 @@ export const SYSTEM_CONFIG = {
     TABLE_HEADER_DATE: 'DATE',
     TABLE_HEADER_TYPE: 'TYPE',
     TABLE_HEADER_NAME: 'NAME',
-    ERROR_BAD_COMMAND: 'BAD COMMAND OR FILE NAME',
+    DIRECTORY_OF: 'DIRECTORY OF ',
+    ERROR_TEMPLATE: ' : COMMAND OR FILE NOT FOUND', // Will be prefixed by input
   },
 
   // ASCII Header Configuration
@@ -71,7 +72,7 @@ export const SYSTEM_CONFIG = {
     TEXT: `
 ░▒▓███████▓▒░ ░▒▓██████▓▒░▒▓████████▓▒░▒▓████████▓▒░░▒▓██████▓▒░░▒▓███████▓▒░  
 ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█ész▒░░▒▓█▓▒░ 
 ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓██████▓▒░ ░▒▓████████▓▒░▒▓███████▓▒░  
 ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
 ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
@@ -87,7 +88,6 @@ export const SYSTEM_CONFIG = {
   },
 
   // Main Directory Commands
-  // Format: [Date, Type, Name, ID]
   COMMANDS: [
     { date: '03/08/2026', type: '<DIR>', name: 'LINKS', id: 'LINKS' },
     { date: '03/24/2026', type: '     ', name: 'LATEST_MEDIA.MOV', id: 'MEDIA' },

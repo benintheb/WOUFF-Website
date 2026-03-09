@@ -16,28 +16,34 @@ function App() {
   const [bootStep, setBootStep] = useState<number>(0)
   const [isReady, setIsReady] = useState<boolean>(false)
   const [currentPage, setCurrentPage] = useState<PageID>('MAIN')
-  const [visibleLines, setVisibleLines] = useState<number>(0)
-  const [visibleHeaderLines, setVisibleHeaderLines] = useState<number>(0)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
   const [commandInput, setCommandInput] = useState<string>('')
   const [suggestion, setSuggestion] = useState<string>('')
   const [errorLine, setErrorLine] = useState<string>('')
   const [lastExecutedCommand, setLastExecutedCommand] = useState<string>('')
-  const [isContentLoading, setIsContentLoading] = useState<boolean>(false)
+  const [loadTrigger, setLoadTrigger] = useState<number>(0)
   
+  // Animation state for sequential loading
+  const [visibleHeaderLines, setVisibleHeaderLines] = useState<number>(0)
+  const [isInfoVisible, setIsInfoVisible] = useState<boolean>(false)
+  const [visibleContentLines, setVisibleContentLines] = useState<number>(0)
+  const [isPromptVisible, setIsPromptVisible] = useState<boolean>(false)
+  const [isFooterVisible, setIsFooterVisible] = useState<boolean>(false)
+
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Split header into lines for animation
   const headerLines = useMemo(() => SYSTEM_CONFIG.HEADER.TEXT.split('\n'), [])
 
   // --- DERIVED DATA ---
+  const isSpecializedPage = currentPage !== 'MAIN' && currentPage !== 'LINKS';
+
   const currentItems = useMemo((): ListingItem[] => {
     if (currentPage === 'MAIN') {
       return [...SYSTEM_CONFIG.COMMANDS] as ListingItem[]
     }
     
     const pageItems = SYSTEM_CONFIG.PAGES[currentPage]
-    // Add ".." navigation to sub-pages using config
     return [
       { 
         date: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }), 
@@ -59,7 +65,7 @@ function App() {
 
   // --- EFFECTS ---
   
-  // Set website metadata
+  // Metadata & Visuals
   useEffect(() => {
     document.title = SYSTEM_CONFIG.METADATA.TITLE;
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -72,10 +78,7 @@ function App() {
       document.getElementsByTagName('head')[0].appendChild(link);
     }
     link.href = SYSTEM_CONFIG.METADATA.FAVICON;
-  }, []);
 
-  // Apply Config Visuals to root
-  useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--terminal-green', SYSTEM_CONFIG.COLORS.PRIMARY);
     root.style.setProperty('--terminal-dim', SYSTEM_CONFIG.COLORS.DIMMED);
@@ -98,54 +101,70 @@ function App() {
     }
   }, [bootStep])
 
-  // Simultaneous Loading (Header and Content)
+  // Top-to-Bottom Sequential Loading Logic
   useEffect(() => {
-    if (isReady) {
-      setVisibleHeaderLines(0)
-      setVisibleLines(0)
-      setIsContentLoading(true)
-      
-      let headerCount = 0
-      let lineCount = 0
-      
-      const timer = setInterval(() => {
-        let done = true
-        
-        if (headerCount < headerLines.length) {
-          headerCount++
-          setVisibleHeaderLines(headerCount)
-          done = false
-        }
-        
-        if (lineCount < currentItems.length + 1) {
-          lineCount++
-          setVisibleLines(lineCount)
-          done = false
-        }
-        
-        if (done) {
-          clearInterval(timer)
-          setIsContentLoading(false)
-        }
-      }, SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD)
-      
-      return () => clearInterval(timer)
-    }
-  }, [isReady, currentPage, currentItems.length, headerLines.length])
+    if (!isReady) return;
 
-  // Focus input on ready
+    // Reset visibility
+    setVisibleHeaderLines(0)
+    setIsInfoVisible(false)
+    setVisibleContentLines(0)
+    setIsPromptVisible(false)
+    setIsFooterVisible(false)
+
+    let currentStep = 0;
+    const interval = SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD;
+
+    const sequenceTimer = setInterval(() => {
+      // 1. Header (only for non-specialized pages)
+      if (!isSpecializedPage && currentStep < headerLines.length) {
+        setVisibleHeaderLines(prev => prev + 1);
+        currentStep++;
+        return;
+      }
+
+      // 2. Directory Info
+      if (!isInfoVisible) {
+        setIsInfoVisible(true);
+        return;
+      }
+
+      // 3. Content Listing / Specialized Content
+      if (visibleContentLines < currentItems.length + 1) {
+        setVisibleContentLines(prev => prev + 1);
+        return;
+      }
+
+      // 4. Prompt
+      if (!isPromptVisible) {
+        setIsPromptVisible(true);
+        return;
+      }
+
+      // 5. Footer
+      if (!isFooterVisible) {
+        setIsFooterVisible(true);
+        clearInterval(sequenceTimer);
+        return;
+      }
+    }, interval);
+
+    return () => clearInterval(sequenceTimer);
+  }, [isReady, currentPage, isSpecializedPage, currentItems.length, headerLines.length, loadTrigger]);
+
+  // Focus input
   useEffect(() => {
-    if (isReady && inputRef.current) {
+    if (isPromptVisible && inputRef.current) {
       inputRef.current.focus()
     }
-  }, [isReady, currentPage])
+  }, [isPromptVisible])
 
   // --- HANDLERS ---
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase()
     setCommandInput(val)
-    setErrorLine('')
+    // Error persists during typing as per Version 4 plan
 
     if (val.length > 0) {
       const found = availableCommands.find(cmd => cmd.startsWith(val))
@@ -164,7 +183,6 @@ function App() {
       }
     } else if (e.key === 'Enter') {
       if (commandInput.trim().length === 0) {
-        // Empty prompt Enter executes selected item
         const selectedItem = currentItems[selectedIndex]
         if (selectedItem) executeCommand(selectedItem.name)
       } else {
@@ -183,59 +201,55 @@ function App() {
     const cleanCmd = cmd.trim().toUpperCase()
     const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
     
-    // Check for ".." or "CD .."
     if (cleanCmd === backCmd || cleanCmd === `CD ${backCmd}`) {
       if (currentPage !== 'MAIN') {
-        setCurrentPage('MAIN')
-        setSelectedIndex(0)
-        setCommandInput('')
-        setSuggestion('')
-        setLastExecutedCommand('') // Clear history on page change
+        changePage('MAIN')
         return
       }
     }
 
-    // Find the item by name
     const targetItem = currentItems.find(item => item.name.toUpperCase() === cleanCmd)
 
     if (targetItem) {
       setLastExecutedCommand(cleanCmd)
+      setErrorLine('')
       if (targetItem.name === SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME) {
-        setCurrentPage('MAIN')
-        setSelectedIndex(0)
-        setLastExecutedCommand('')
+        changePage('MAIN')
       } else if (targetItem.url) {
         window.open(targetItem.url, '_blank')
       } else if (targetItem.id) {
-        setCurrentPage(targetItem.id)
-        setSelectedIndex(0)
-        setLastExecutedCommand('')
+        changePage(targetItem.id)
       }
       setCommandInput('')
       setSuggestion('')
     } else if (cleanCmd.length > 0) {
-      setErrorLine(`${cleanCmd} : command or file not found`)
+      setErrorLine(cleanCmd + SYSTEM_CONFIG.UI_TEXT.ERROR_TEMPLATE)
       setCommandInput('')
       setSuggestion('')
     }
   }
 
-  const handleOptionClick = (index: number) => {
-    setSelectedIndex(index)
-    const item = currentItems[index]
-    executeCommand(item.name)
-  }
-
-  const handlePathSegmentClick = (id: PageID) => {
+  const changePage = (id: PageID) => {
     setCurrentPage(id)
     setSelectedIndex(0)
     setLastExecutedCommand('')
     setErrorLine('')
+    setCommandInput('')
+    setSuggestion('')
+    // Trigger reload animation
+    setLoadTrigger(prev => prev + 1)
+  }
+
+  const handlePathSegmentClick = (id: PageID) => {
+    if (currentPage === id) {
+      // Reload current page animation
+      setLoadTrigger(prev => prev + 1)
+    } else {
+      changePage(id)
+    }
   }
 
   // --- RENDER HELPERS ---
-
-  const isSpecializedPage = currentPage !== 'MAIN' && currentPage !== 'LINKS';
 
   const renderTableHead = () => (
     <div style={{ 
@@ -257,7 +271,7 @@ function App() {
       <div 
         key={`${item.name}-${index}`}
         onMouseEnter={() => setSelectedIndex(index)}
-        onClick={() => handleOptionClick(index)}
+        onClick={() => executeCommand(item.name)}
         style={{ 
           display: 'grid', 
           gridTemplateColumns: `${SYSTEM_CONFIG.VISUALS.LAYOUT.DATE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.TYPE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.NAME_COL_WIDTH}`,
@@ -304,7 +318,7 @@ function App() {
   const renderSpecializedContent = () => {
     if (currentPage.includes('MEDIA')) {
       return (
-        <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '1rem 0', opacity: visibleLines > 0 ? 1 : 0 }}>
+        <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '1rem 0' }}>
           <div style={{ width: '100%', aspectRatio: '16/9', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             [ MOVIE PLAYER PLACEHOLDER ]
           </div>
@@ -314,24 +328,24 @@ function App() {
     }
     if (currentPage.includes('ABOUT')) {
       return (
-        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap', opacity: visibleLines > 0 ? 1 : 0 }}>
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
           <div style={{ textAlign: 'center', borderBottom: '1px solid var(--terminal-green)', paddingBottom: '1rem', marginBottom: '1rem' }}>
             --- TEXT VIEWER ---
           </div>
           {currentItems.map((item, idx) => (
-            <div key={idx} style={{ marginBottom: '0.5rem', opacity: idx < visibleLines ? 1 : 0 }}>{item.name}</div>
+            <div key={idx} style={{ marginBottom: '0.5rem', opacity: idx < visibleContentLines ? 1 : 0 }}>{item.name}</div>
           ))}
         </div>
       )
     }
     if (currentPage.includes('DISCO')) {
       return (
-        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', display: 'flex', flexDirection: 'column', opacity: visibleLines > 0 ? 1 : 0 }}>
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', display: 'flex', flexDirection: 'column' }}>
           <div style={{ borderBottom: '1px solid var(--terminal-green)', marginBottom: '1rem' }}>EXECUTING DISCOGRAPHY.EXE...</div>
           <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleLines > 1 ? 1 : 0 }}>[ ALBUM_01 ]</div>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleLines > 2 ? 1 : 0 }}>[ ALBUM_02 ]</div>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleLines > 3 ? 1 : 0 }}>[ ALBUM_03 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleContentLines > 1 ? 1 : 0 }}>[ ALBUM_01 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleContentLines > 2 ? 1 : 0 }}>[ ALBUM_02 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleContentLines > 3 ? 1 : 0 }}>[ ALBUM_03 ]</div>
           </div>
         </div>
       )
@@ -360,32 +374,38 @@ function App() {
             </header>
           )}
 
-          {isSpecializedPage ? renderSpecializedContent() : (
-            <div className="directory-listing" style={{ marginTop: '1rem' }}>
-              <div className="dim" style={{ marginBottom: '1rem' }}>
-                {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br/>
-                Directory of {renderBreadcrumbs()}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', opacity: isInfoVisible ? 1 : 0 }}>
+            {isSpecializedPage ? renderSpecializedContent() : (
+              <div className="directory-listing" style={{ marginTop: '1rem' }}>
+                <div className="dim" style={{ marginBottom: '1rem' }}>
+                  {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br/>
+                  {SYSTEM_CONFIG.UI_TEXT.DIRECTORY_OF}{renderBreadcrumbs()}
+                </div>
+
+                {visibleContentLines > 0 && renderTableHead()}
+                
+                {currentItems.map((item, idx) => {
+                  if (idx < visibleContentLines - 1) {
+                    return renderRow(item, idx)
+                  }
+                  return null
+                })}
               </div>
+            )}
+          </div>
 
-              {visibleLines > 0 && renderTableHead()}
-              
-              {currentItems.map((item, idx) => {
-                if (idx < visibleLines - 1) {
-                  return renderRow(item, idx)
-                }
-                return null
-              })}
-            </div>
-          )}
-
-          <footer style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+          <footer style={{ marginTop: 'auto', paddingTop: '2rem', opacity: isPromptVisible ? 1 : 0 }}>
             {lastExecutedCommand && (
               <div className="dim" style={{ marginBottom: '0.2rem' }}>
                 {renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {lastExecutedCommand}
               </div>
             )}
             
-            {errorLine && <div style={{ marginBottom: '0.5rem' }}>{errorLine}</div>}
+            {errorLine && (
+              <div className="dim" style={{ marginBottom: '0.5rem', color: 'var(--terminal-dim)' }}>
+                {SYSTEM_CONFIG.SYSTEM.DRIVE_LETTER}\WOUFF{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {errorLine}
+              </div>
+            )}
             
             <div style={{ marginBottom: '1rem' }} />
 
@@ -430,7 +450,14 @@ function App() {
                 )}
               </div>
             </div>
-            <div style={{ marginTop: '1rem', borderTop: '1px solid var(--terminal-dim)', paddingTop: '0.5rem', fontSize: '1rem' }} className="dim">
+            
+            <div style={{ 
+              marginTop: '1rem', 
+              borderTop: '1px solid var(--terminal-dim)', 
+              paddingTop: '0.5rem', 
+              fontSize: '1rem',
+              opacity: isFooterVisible ? 1 : 0 
+            }} className="dim">
               {SYSTEM_CONFIG.FOOTER.COPYRIGHT}
             </div>
           </footer>

@@ -6,6 +6,8 @@ This document outlines the core behaviors, safety protocols, and technical stand
 
 ## 1. Core Behavior & Boundaries
 
+- **Approval Required:** Never proceed with code implementation or system changes until the proposed plan, strategy, or log update has been explicitly approved by the instructor. 
+- **Strict Scope:** Adhere strictly to the scope of the current instruction. Do not carry over "implement" or "push" directives from previous turns to newly updated plans or data.
 - **User-Centric UX Mindset:** Beyond technical implementation, you must proactively evaluate the user experience. Identify potential interaction clashes (e.g., keybinding conflicts) and ensure a seamless, intuitive interface. If a technical instruction compromises UX, you must report it to the instructor before proceeding.
 - **Reporting:** Always summarize a brief report detailing exactly how the instructions were handled and what files were touched after completing a task.
 - **Clarification:** If an instruction is ambiguous or lacks necessary context, stop and ask the instructor for clarification rather than guessing.

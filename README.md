@@ -27,32 +27,32 @@ A minimal, artistic landing page for contact information, social media links, an
 ### **Log:**
 > 1. Fix link navigation to work with the `Enter` button.
 > 2. Implement specialized layouts for `.MOV` (embedded player), `.TXT` (text app), and `.EXE` (app character).
-> 3. Animate ASCII header and directory listings simultaneously during page loads.
+> 3. Animate ASCII header, directory listings, prompt, and footer in a unified top-to-bottom sequence.
 > 4. Improve Mobile UX: Disable automatic keyboard pop-up when clicking links.
-> 5. Expand `config.ts`: Include favicon, website name, and SEO metadata.
-> 6. Enhance Prompt: Show last command above prompt (cleared on page change); remove `ArrowUp` recall to prevent list navigation clashes.
+> 5. Expand `config.ts`: Centralize all new UI text, error templates, and metadata.
+> 6. Enhance Prompt: Show persistent, dimmed, all-caps error messages; remove `ArrowUp` recall.
 > 7. Unified Selection: Mouse hover and keyboard selection now sync; highlight follows the mouse cursor.
 > 8. Smart Enter: Empty prompt `Enter` executes selected item; otherwise executes typed command.
-> 9. Interactive Breadcrumbs: Clickable path segments in the prompt with hover feedback for quick navigation.
+> 9. Interactive Breadcrumbs: Clickable path segments that trigger page reloads with hover feedback.
 
 ---
 
 ### **Detailed Project Plan: Version 04**
 
-#### **1. Specialized File Handlers & Loading**
-- **Simultaneous Loading:** Trigger header and list animations in parallel.
+#### **1. Specialized File Handlers & Sequential Loading**
+- **Unified Loading:** Coordinate a single animation timeline from [Header] -> [Info] -> [Content] -> [Prompt] -> [Footer].
 - **Component Loading:** Apply the line-by-line "load" effect to media players and text containers.
 - **Media/Text/App Views:** Refined layouts that omit the ASCII header and focus on content.
 
 #### **2. Unified Interaction Model**
 - **Hover Sync:** Map `onMouseEnter` to `setSelectedIndex` for a seamless mouse/keyboard experience.
-- **Breadcrumb Navigation:** Transform the path display into interactive segments with hover-state styling (dimmed box background).
+- **Breadcrumb Navigation:** Interactive segments with hover-state styling; clicking the current segment triggers a page reload animation.
 - **Dual-Mode Enter:** Conditional logic for the `Enter` key based on prompt buffer state.
 
 #### **3. Terminal & UX Refinements**
-- **Verbose Errors:** Update error display to include the faulty command string.
-- **History Management:** Logic to clear the "last command" display upon directory or page transitions.
-- **Operational Update:** Update `AGENTS.md` to prioritize user-centric UX thinking.
+- **Persistent All-Caps Errors:** Display `[INPUT] : COMMAND OR FILE NOT FOUND` in dimmed color; message persists during new input.
+- **Config Synchronization:** Move every hardcoded string and UI setting into `src/config.ts` to ensure project-wide unison.
+- **Operational Update:** Update `AGENTS.md` to prioritize user-centric UX thinking and approval-based workflows.
 
 #### **4. Global Metadata Config**
 - **Integration:** Sync `index.html` titles and icons with `SYSTEM_CONFIG` values.
