@@ -357,7 +357,7 @@ function App() {
   }
 
   const renderSpecializedContent = () => {
-    if (currentPage.includes('MEDIA')) {
+    if (currentPage === 'MEDIA') {
       return (
         <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '1rem 0' }}>
           <div style={{ width: '100%', aspectRatio: '16/9', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -367,7 +367,7 @@ function App() {
         </div>
       )
     }
-    if (currentPage.includes('ABOUT')) {
+    if (currentPage === 'ABOUT_P' || currentPage === 'ABOUT_W') {
       return (
         <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
           <div style={{ textAlign: 'center', borderBottom: '1px solid var(--terminal-green)', paddingBottom: '1rem', marginBottom: '1rem' }}>
@@ -379,7 +379,7 @@ function App() {
         </div>
       )
     }
-    if (currentPage.includes('DISCO')) {
+    if (currentPage === 'DISCO') {
       return (
         <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', display: 'flex', flexDirection: 'column' }}>
           <div style={{ borderBottom: '1px solid var(--terminal-green)', marginBottom: '1rem' }}>EXECUTING DISCOGRAPHY.EXE...</div>
@@ -448,7 +448,7 @@ function App() {
               </div>
             )}
             
-            <div style={{ marginBottom: '1rem' }} />
+            <div style={{ marginBottom: 'var(--header-margin-bottom)' }} />
 
             <div className="prompt-line" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
               <span>{renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL}&nbsp;</span>

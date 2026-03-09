@@ -5,6 +5,7 @@
   --font-family: 'VT323', monospace;
   --scanline-opacity: 0.25;
   --glow-intensity: 0 0 10px rgba(0, 255, 0, 0.4);
+  --header-margin-bottom: 2rem;
 }
 
 * {
@@ -123,10 +124,12 @@ a:hover {
 }
 
 .ascii-header {
-  font-size: 0.8rem;
+  font-size: min(0.8rem, 2.1vw); /* Slightly reduced to prevent cutting off the 'R' on narrow screens */
   line-height: 1;
   white-space: pre;
-  margin-bottom: 2rem;
+  margin-bottom: var(--header-margin-bottom);
   color: var(--terminal-green);
   text-shadow: var(--glow-intensity);
+  width: 100%;
+  overflow-x: hidden;
 }
