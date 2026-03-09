@@ -24,9 +24,9 @@ export const SYSTEM_CONFIG = {
     SCANLINE_OPACITY: 0.25,
     GLOW_INTENSITY: '0 0 10px rgba(0, 255, 0, 0.4)',
     LAYOUT: {
-      DATE_COL_WIDTH: '150px',
-      TYPE_COL_WIDTH: '100px',
-      NAME_COL_WIDTH: '1fr',
+      DATE_COL_WIDTH: '1fr', // Spaced evenly
+      TYPE_COL_WIDTH: '1fr', // Spaced evenly
+      NAME_COL_WIDTH: '1fr', // Spaced evenly
     }
   },
 

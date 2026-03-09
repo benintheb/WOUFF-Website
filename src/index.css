@@ -6,6 +6,11 @@
   --scanline-opacity: 0.25;
   --glow-intensity: 0 0 10px rgba(0, 255, 0, 0.4);
   --header-margin-bottom: 2rem;
+  
+  /* Layout Widths - Driven by ASCII Header Width */
+  --content-width-pc: 800px;
+  --content-width-tablet: 600px;
+  --content-width-mobile: 90vw;
 }
 
 * {
@@ -51,41 +56,62 @@ body::before {
   justify-content: center;
 }
 
-/* The Monitor Layout */
+/* The Monitor Layout - Remains full size */
 .monitor {
   width: 100%;
   height: 100%;
   max-width: 1200px;
   max-height: 900px;
-  padding: 40px 60px; /* Top/Bottom and Left/Right padding for desktop */
+  padding: 40px 60px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow-y: auto;
 }
 
+/* Mode 1: PC Monitor (Standard) */
+.terminal-content {
+  width: var(--content-width-pc);
+  margin: 0 auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 600px;
+}
+
+/* Mode 2: Tablet */
+@media (max-width: 1024px) {
+  .terminal-content {
+    width: var(--content-width-tablet);
+  }
+}
+
+/* Mode 3: Mobile */
 @media (max-width: 768px) {
   .monitor {
-    padding: 20px 10px; /* Keep top/bottom, small left/right on mobile */
+    padding: 20px 10px;
   }
   
   body {
     font-size: 1.2rem;
   }
-}
 
-.terminal-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  min-height: 600px; /* Ensure space for content + footer */
+  .terminal-content {
+    width: var(--content-width-mobile);
+    min-height: 500px;
+  }
 }
 
 /* Dedicated height for list to prevent jumpy layout */
 .directory-container {
   min-height: 250px;
   margin-top: 1rem;
+  width: 100%;
+}
+
+.directory-listing {
+  width: 100%;
 }
 
 /* Absolute footer to stay fixed during reloads */
@@ -124,12 +150,14 @@ a:hover {
 }
 
 .ascii-header {
-  font-size: min(0.8rem, 2.1vw); /* Slightly reduced to prevent cutting off the 'R' on narrow screens */
+  font-size: min(1rem, 2vw); /* Updated per instructor's direct change */
   line-height: 1;
+
   white-space: pre;
   margin-bottom: var(--header-margin-bottom);
   color: var(--terminal-green);
   text-shadow: var(--glow-intensity);
-  width: 100%;
+  width: 100%; /* Spans the width of terminal-content */
+  text-align: center;
   overflow-x: hidden;
 }
