@@ -1,34 +1,82 @@
 /**
  * SYSTEM CONFIGURATION (src/config.ts)
  * ------------------------------------
- * Use this file to adjust the look and behavior of the WOUFF-Website.
+ * Use this file to adjust the look, behavior, and text of the WOUFF-Website.
  */
 
 export const SYSTEM_CONFIG = {
-  // Visual Aesthetics
+  // Global Website Settings
+  METADATA: {
+    TITLE: 'WOUFF | POTEAR',
+    DESCRIPTION: 'Official website of WOUFF/Potear. A minimal, artistic landing page for musical projects.',
+    FAVICON: '/favicon.ico', // Ensure this file exists in the public folder
+  },
+
+  // Visual Aesthetics & Effects
   COLORS: {
-    PRIMARY: '#00FF00', // Classic Terminal Green
-    DIMMED: '#00AA00',  // Dimmed Green for secondary info
+    PRIMARY: '#00FF00',    // Classic Terminal Green
+    DIMMED: '#00AA00',     // Dimmed Green for secondary info
     BACKGROUND: '#000000', // Absolute Black
+  },
+
+  VISUALS: {
+    FONT_FAMILY: "'VT323', monospace", // The primary monospace font stack
+    SCANLINE_OPACITY: 0.25,             // Opacity of the horizontal CRT scanlines (0.0 to 1.0)
+    GLOW_INTENSITY: '0 0 10px rgba(0, 255, 0, 0.4)', // Text bloom/glow effect
+    LAYOUT: {
+      DATE_COL_WIDTH: '150px', // Width of the DATE column in listings
+      TYPE_COL_WIDTH: '100px', // Width of the TYPE column in listings
+      NAME_COL_WIDTH: '1fr',   // Width of the NAME column (flexible)
+    }
   },
 
   // Timing & Speeds (in milliseconds)
   SPEEDS: {
-    BOOT_STEP_MIN: 200,
-    BOOT_STEP_MAX: 700,
-    BOOT_READY_DELAY: 1000,
-    PAGE_LINE_LOAD: 70, // Speed at which sub-page lines appear
+    BOOT_STEP_MIN: 200,    // Minimum delay between BIOS boot steps
+    BOOT_STEP_MAX: 700,    // Maximum delay between BIOS boot steps
+    BOOT_READY_DELAY: 1000, // Wait time after BIOS finishes before showing terminal
+    PAGE_LINE_LOAD: 70,    // Speed at which directory listing lines appear
+  },
+
+  // BIOS Boot Sequence Text
+  BIOS: {
+    TITLE: 'WOUFF SYSTEM BIOS v1.0',
+    COPYRIGHT: '(C) 2026 WOUFF. ALL RIGHTS RESERVED.',
+    CPU_INFO: 'CPU: POTEAR v0.1 @ 4.2GHz',
+    MEMORY_INFO: 'MEMORY: 640KB OK',
+    DISK_SEARCH: 'SEARCHING FOR DISK... OK',
+    BOOT_MESSAGE: 'BOOTING FROM C:\\WOUFF... DONE',
+  },
+
+  // System Environment & Labels
+  SYSTEM: {
+    VOLUME_LABEL: 'Volume in drive C is WOUFF_ROOT',
+    DRIVE_LETTER: 'C:',
+    ROOT_PATH: 'WOUFF',
+    PROMPT_SYMBOL: '>',
+    BACK_DIR_NAME: '..',
+    BACK_DIR_TYPE: '<DIR>',
+  },
+
+  // User Interface Text
+  UI_TEXT: {
+    TABLE_HEADER_DATE: 'DATE',
+    TABLE_HEADER_TYPE: 'TYPE',
+    TABLE_HEADER_NAME: 'NAME',
+    ERROR_BAD_COMMAND: 'BAD COMMAND OR FILE NAME',
   },
 
   // ASCII Header Configuration
   HEADER: {
     TEXT: `
- ██████╗  ██████╗ ████████╗███████╗ █████╗ ██████╗ 
- ██╔══██╗██╔═══██╗╚══██╔══╝██╔════╝██╔══██╗██╔══██╗
- ██████╔╝██║   ██║   ██║   █████╗  ███████║██████╔╝
- ██╔═══╝ ██║   ██║   ██║   ██╔══╝  ██╔══██║██╔══██╗
- ██║     ╚██████╔╝   ██║   ███████╗██║  ██║██║  ██║
- ╚═╝      ╚═════╝    ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+░▒▓███████▓▒░ ░▒▓██████▓▒░▒▓████████▓▒░▒▓████████▓▒░░▒▓██████▓▒░░▒▓███████▓▒░  
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓██████▓▒░ ░▒▓████████▓▒░▒▓███████▓▒░  
+░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░       ░▒▓██████▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░ 
+                                                                               
 `,
   },
 

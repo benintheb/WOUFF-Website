@@ -22,12 +22,40 @@ A minimal, artistic landing page for contact information, social media links, an
 
 # 📜 Daily Logs & Project Plans
 
-26.03.10 version 4 
+## 📅 26.03.10 | ver.04 - Specialized Layouts & Interactive Polish
 
-- links dont work with enter button
-- mov, exe, and txt when opened should be different format
-- faster line by line speed
-- home page, potear sign should also be loaded line by line.
+### **Log:**
+> 1. Fix link navigation to work with the `Enter` button.
+> 2. Implement specialized layouts for `.MOV` (embedded player), `.TXT` (text app), and `.EXE` (app character).
+> 3. Animate the ASCII "POTEAR" header line-by-line at startup.
+> 4. Improve Mobile UX: Disable automatic keyboard pop-up when clicking links.
+> 5. Expand `config.ts`: Include favicon, website name, and SEO metadata.
+> 6. Enhance Prompt: Add command history (up arrow to recall) and show the last command above the prompt in dimmed color.
+> 7. Interactive Hover: Selection highlight follows mouse cursor and highlights items on hover.
+
+---
+
+### **Detailed Project Plan: Version 04**
+
+#### **1. Specialized File Handlers**
+- **Media (`.MOV`):** Create a terminal-styled video container. Layout: [Video Player] -> [Prompt] -> [Footer]. (Note: ASCII header is hidden for this view).
+- **Text (`.TXT`):** Create a "DOS Edit" style viewer for content-heavy pages. Layout: [Text Viewer] -> [Prompt] -> [Footer]. (Note: ASCII header is hidden for this view).
+- **Apps (`.EXE`):** Unique interactive layout for the discography. Layout: [App Interface] -> [Prompt] -> [Footer]. (Note: ASCII header is hidden for this view).
+
+#### **2. Advanced Terminal Logic**
+- **Command Buffer:** Store the last executed command.
+- **Visual History:** Render the previous command line above the active prompt using `var(--terminal-dim)`.
+- **Recall:** Map `ArrowUp` to restore the last command string to the input.
+- **Header Animation:** Split the ASCII header into lines and stagger their appearance using the `PAGE_LINE_LOAD` speed.
+
+#### **3. UX & Mobile Optimization**
+- **Input Management:** Ensure `inputMode="none"` or similar logic for non-text interactions to prevent keyboard intrusion on mobile links.
+- **Mouse Sync:** Bridge the gap between `selectedIndex` (keyboard) and `hoverIndex` (mouse) for a unified highlight effect.
+
+#### **4. Global Metadata Config**
+- **Integration:** Sync `index.html` titles and icons with `SYSTEM_CONFIG` values via a script or React Helmet-style effect.
+
+---
 
 ## 📅 26.03.09 | ver.03 - Modernized Terminal & Navigation
 

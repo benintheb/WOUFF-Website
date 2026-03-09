@@ -17,12 +17,18 @@ function App() {
   const [isReady, setIsReady] = useState<boolean>(false)
   const [currentPage, setCurrentPage] = useState<PageID>('MAIN')
   const [visibleLines, setVisibleLines] = useState<number>(0)
+  const [visibleHeaderLines, setVisibleHeaderLines] = useState<number>(0)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [commandInput, setCommandInput] = useState<string>('')
   const [suggestion, setSuggestion] = useState<string>('')
   const [errorLine, setErrorLine] = useState<string>('')
+  const [lastExecutedCommand, setLastExecutedCommand] = useState<string>('')
   
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Split header into lines for animation
+  const headerLines = useMemo(() => SYSTEM_CONFIG.HEADER.TEXT.split('\n'), [])
 
   // --- DERIVED DATA ---
   const currentItems = useMemo((): ListingItem[] => {
@@ -31,26 +37,52 @@ function App() {
     }
     
     const pageItems = SYSTEM_CONFIG.PAGES[currentPage]
-    // Add ".." navigation to sub-pages
-    return [{ date: '03/08/2026', type: '<DIR>', name: '..' }, ...pageItems] as ListingItem[]
+    // Add ".." navigation to sub-pages using config
+    return [
+      { 
+        date: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }), 
+        type: SYSTEM_CONFIG.SYSTEM.BACK_DIR_TYPE, 
+        name: SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME 
+      }, 
+      ...pageItems
+    ] as ListingItem[]
   }, [currentPage])
 
   const availableCommands = useMemo(() => {
     const names = currentItems.map(item => item.name.toUpperCase())
     if (currentPage !== 'MAIN') {
-      names.push('CD ..', '..')
+      const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
+      names.push(`CD ${backCmd}`, backCmd)
     }
     return names
   }, [currentItems, currentPage])
 
   // --- EFFECTS ---
   
-  // Apply Config Colors to root
+  // Set website metadata
+  useEffect(() => {
+    document.title = SYSTEM_CONFIG.METADATA.TITLE;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute('content', SYSTEM_CONFIG.METADATA.DESCRIPTION);
+    
+    let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.href = SYSTEM_CONFIG.METADATA.FAVICON;
+  }, []);
+
+  // Apply Config Visuals to root
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--terminal-green', SYSTEM_CONFIG.COLORS.PRIMARY);
     root.style.setProperty('--terminal-dim', SYSTEM_CONFIG.COLORS.DIMMED);
     root.style.setProperty('--terminal-bg', SYSTEM_CONFIG.COLORS.BACKGROUND);
+    root.style.setProperty('--font-family', SYSTEM_CONFIG.VISUALS.FONT_FAMILY);
+    root.style.setProperty('--scanline-opacity', SYSTEM_CONFIG.VISUALS.SCANLINE_OPACITY.toString());
+    root.style.setProperty('--glow-intensity', SYSTEM_CONFIG.VISUALS.GLOW_INTENSITY);
   }, []);
 
   // BIOS Boot Sequence
@@ -66,9 +98,26 @@ function App() {
     }
   }, [bootStep])
 
-  // Sequential Page Loading (Line-by-line)
+  // Sequential Header Loading
   useEffect(() => {
     if (isReady) {
+      setVisibleHeaderLines(0)
+      const timer = setInterval(() => {
+        setVisibleHeaderLines(prev => {
+          if (prev < headerLines.length) {
+            return prev + 1
+          }
+          clearInterval(timer)
+          return prev
+        })
+      }, SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD)
+      return () => clearInterval(timer)
+    }
+  }, [isReady, headerLines.length])
+
+  // Sequential Page Loading (Line-by-line)
+  useEffect(() => {
+    if (isReady && (visibleHeaderLines >= headerLines.length || currentPage !== 'MAIN')) {
       setVisibleLines(0)
       const timer = setInterval(() => {
         setVisibleLines(prev => {
@@ -81,7 +130,7 @@ function App() {
       }, SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD)
       return () => clearInterval(timer)
     }
-  }, [isReady, currentPage, currentItems.length])
+  }, [isReady, currentPage, currentItems.length, visibleHeaderLines, headerLines.length])
 
   // Focus input on ready
   useEffect(() => {
@@ -116,7 +165,12 @@ function App() {
       executeCommand(commandInput)
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setSelectedIndex(prev => (prev > 0 ? prev - 1 : currentItems.length - 1))
+      if (lastExecutedCommand) {
+        setCommandInput(lastExecutedCommand)
+        setSuggestion('')
+      } else {
+        setSelectedIndex(prev => (prev > 0 ? prev - 1 : currentItems.length - 1))
+      }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
       setSelectedIndex(prev => (prev < currentItems.length - 1 ? prev + 1 : 0))
@@ -125,9 +179,14 @@ function App() {
 
   const executeCommand = (cmd: string) => {
     const cleanCmd = cmd.trim().toUpperCase()
+    const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
     
+    if (cleanCmd.length > 0) {
+      setLastExecutedCommand(cleanCmd)
+    }
+
     // Check for ".." or "CD .."
-    if (cleanCmd === '..' || cleanCmd === 'CD ..') {
+    if (cleanCmd === backCmd || cleanCmd === `CD ${backCmd}`) {
       if (currentPage !== 'MAIN') {
         setCurrentPage('MAIN')
         setSelectedIndex(0)
@@ -141,7 +200,7 @@ function App() {
     const targetItem = currentItems.find(item => item.name.toUpperCase() === cleanCmd)
 
     if (targetItem) {
-      if (targetItem.name === '..') {
+      if (targetItem.name === SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME) {
         setCurrentPage('MAIN')
         setSelectedIndex(0)
       } else if (targetItem.url) {
@@ -153,7 +212,7 @@ function App() {
       setCommandInput('')
       setSuggestion('')
     } else if (cleanCmd.length > 0) {
-      setErrorLine('BAD COMMAND OR FILE NAME')
+      setErrorLine(SYSTEM_CONFIG.UI_TEXT.ERROR_BAD_COMMAND)
       setCommandInput('')
       setSuggestion('')
     }
@@ -167,70 +226,143 @@ function App() {
 
   // --- RENDER HELPERS ---
 
+  const isSpecializedPage = currentPage !== 'MAIN' && currentPage !== 'LINKS';
+
   const renderTableHead = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: '150px 100px 1fr', marginBottom: '0.5rem', borderBottom: '1px dashed var(--terminal-dim)', paddingBottom: '2px' }} className="dim">
-      <span>DATE</span>
-      <span>TYPE</span>
-      <span>NAME</span>
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: `${SYSTEM_CONFIG.VISUALS.LAYOUT.DATE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.TYPE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.NAME_COL_WIDTH}`, 
+      marginBottom: '0.5rem', 
+      borderBottom: '1px dashed var(--terminal-dim)', 
+      paddingBottom: '2px' 
+    }} className="dim">
+      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_DATE}</span>
+      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_TYPE}</span>
+      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_NAME}</span>
     </div>
   )
 
-  const renderRow = (item: ListingItem, index: number) => (
-    <div 
-      key={`${item.name}-${index}`}
-      onClick={() => handleOptionClick(index)}
-      style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '150px 100px 1fr',
-        cursor: 'pointer',
-        backgroundColor: selectedIndex === index ? 'var(--terminal-green)' : 'transparent',
-        color: selectedIndex === index ? 'var(--terminal-bg)' : 'var(--terminal-green)',
-        padding: '2px 0'
-      }}
-    >
-      <span>{item.date}</span>
-      <span>{item.type}</span>
-      <span>{item.name}</span>
-    </div>
-  )
+  const renderRow = (item: ListingItem, index: number) => {
+    const isSelected = selectedIndex === index || hoverIndex === index;
+    return (
+      <div 
+        key={`${item.name}-${index}`}
+        onMouseEnter={() => setHoverIndex(index)}
+        onMouseLeave={() => setHoverIndex(null)}
+        onClick={() => handleOptionClick(index)}
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: `${SYSTEM_CONFIG.VISUALS.LAYOUT.DATE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.TYPE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.NAME_COL_WIDTH}`,
+          cursor: 'pointer',
+          backgroundColor: isSelected ? 'var(--terminal-green)' : 'transparent',
+          color: isSelected ? 'var(--terminal-bg)' : 'var(--terminal-green)',
+          padding: '2px 0'
+        }}
+      >
+        <span>{item.date}</span>
+        <span>{item.type}</span>
+        <span>{item.name}</span>
+      </div>
+    )
+  }
+
+  const getCurrentPath = () => {
+    const root = SYSTEM_CONFIG.SYSTEM.DRIVE_LETTER + '\\' + SYSTEM_CONFIG.SYSTEM.ROOT_PATH
+    return currentPage === 'MAIN' ? root : `${root}\\${currentPage}`
+  }
+
+  const renderSpecializedContent = () => {
+    if (currentPage.includes('MEDIA')) {
+      return (
+        <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '1rem 0' }}>
+          <div style={{ width: '100%', aspectRatio: '16/9', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            [ MOVIE PLAYER PLACEHOLDER ]
+          </div>
+          <div style={{ marginTop: '1rem' }} className="dim">LATEST_MEDIA.MOV - PLAYING</div>
+        </div>
+      )
+    }
+    if (currentPage.includes('ABOUT')) {
+      return (
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+          <div style={{ textAlign: 'center', borderBottom: '1px solid var(--terminal-green)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+            --- TEXT VIEWER ---
+          </div>
+          {currentItems.map((item, idx) => (
+            <div key={idx} style={{ marginBottom: '0.5rem' }}>{item.name}</div>
+          ))}
+        </div>
+      )
+    }
+    if (currentPage.includes('DISCO')) {
+      return (
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ borderBottom: '1px solid var(--terminal-green)', marginBottom: '1rem' }}>EXECUTING DISCOGRAPHY.EXE...</div>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+            {/* App character interface */}
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem' }}>[ ALBUM_01 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem' }}>[ ALBUM_02 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem' }}>[ ALBUM_03 ]</div>
+          </div>
+        </div>
+      )
+    }
+    return null;
+  }
 
   return (
     <div className="monitor">
       {!isReady ? (
         <section className="bios">
-          <div>WOUFF SYSTEM BIOS v1.0</div>
-          <div>(C) 2026 WOUFF. ALL RIGHTS RESERVED.</div>
-          {bootStep > 0 && <div>CPU: POTEAR v0.1 @ 4.2GHz</div>}
-          {bootStep > 1 && <div>MEMORY: 640KB OK</div>}
-          {bootStep > 2 && <div style={{ marginTop: '1rem' }}>SEARCHING FOR DISK... OK</div>}
-          {bootStep > 3 && <div>BOOTING FROM C:\\WOUFF... DONE</div>}
+          <div>{SYSTEM_CONFIG.BIOS.TITLE}</div>
+          <div>{SYSTEM_CONFIG.BIOS.COPYRIGHT}</div>
+          {bootStep > 0 && <div>{SYSTEM_CONFIG.BIOS.CPU_INFO}</div>}
+          {bootStep > 1 && <div>{SYSTEM_CONFIG.BIOS.MEMORY_INFO}</div>}
+          {bootStep > 2 && <div style={{ marginTop: '1rem' }}>{SYSTEM_CONFIG.BIOS.DISK_SEARCH}</div>}
+          {bootStep > 3 && <div>{SYSTEM_CONFIG.BIOS.BOOT_MESSAGE}</div>}
         </section>
       ) : (
         <div className="terminal-content">
-          <header className="ascii-header">
-            {SYSTEM_CONFIG.HEADER.TEXT}
-          </header>
+          {!isSpecializedPage && (
+            <header className="ascii-header">
+              {headerLines.map((line, idx) => (
+                <div key={idx} style={{ opacity: idx < visibleHeaderLines ? 1 : 0 }}>{line}</div>
+              ))}
+            </header>
+          )}
 
-          <div className="directory-listing" style={{ marginTop: '1rem' }}>
-            <div className="dim" style={{ marginBottom: '1rem' }}>
-              Volume in drive C is WOUFF_ROOT<br/>
-              Directory of C:\{currentPage === 'MAIN' ? 'WOUFF' : currentPage}
+          {isSpecializedPage ? renderSpecializedContent() : (
+            <div className="directory-listing" style={{ marginTop: '1rem' }}>
+              <div className="dim" style={{ marginBottom: '1rem' }}>
+                {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br/>
+                Directory of {getCurrentPath()}
+              </div>
+
+              {visibleLines > 0 && renderTableHead()}
+              
+              {currentItems.map((item, idx) => {
+                if (idx < visibleLines - 1) {
+                  return renderRow(item, idx)
+                }
+                return null
+              })}
             </div>
-
-            {visibleLines > 0 && renderTableHead()}
-            
-            {currentItems.map((item, idx) => {
-              if (idx < visibleLines - 1) {
-                return renderRow(item, idx)
-              }
-              return null
-            })}
-          </div>
+          )}
 
           <footer style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+            {/* Command History Display */}
+            {lastExecutedCommand && (
+              <div className="dim" style={{ marginBottom: '0.2rem' }}>
+                {getCurrentPath()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {lastExecutedCommand}
+              </div>
+            )}
+            
             {errorLine && <div style={{ marginBottom: '0.5rem' }}>{errorLine}</div>}
+            
+            <div style={{ marginBottom: '1rem' }} /> {/* Space above prompt */}
+
             <div className="prompt-line" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-              <span>C:\{currentPage === 'MAIN' ? 'WOUFF' : currentPage}&gt;&nbsp;</span>
+              <span>{getCurrentPath()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL}&nbsp;</span>
               <div style={{ position: 'relative', flex: 1 }}>
                 <input
                   ref={inputRef}
@@ -240,6 +372,7 @@ function App() {
                   onKeyDown={handleKeyDown}
                   spellCheck={false}
                   autoFocus
+                  inputMode={currentPage === 'LINKS' || isSpecializedPage ? 'none' : 'text'}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -250,7 +383,8 @@ function App() {
                     width: '100%',
                     caretColor: 'var(--terminal-green)',
                     position: 'relative',
-                    zIndex: 2
+                    zIndex: 2,
+                    textShadow: 'var(--glow-intensity)'
                   }}
                 />
                 {suggestion && commandInput && (
@@ -260,7 +394,8 @@ function App() {
                     left: 0,
                     color: 'var(--terminal-dim)',
                     pointerEvents: 'none',
-                    zIndex: 1
+                    zIndex: 1,
+                    textShadow: 'var(--glow-intensity)'
                   }}>
                     {commandInput}<span className="dim">{suggestion.slice(commandInput.length)}</span>
                   </div>
