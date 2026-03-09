@@ -19,11 +19,11 @@ function App() {
   const [visibleLines, setVisibleLines] = useState<number>(0)
   const [visibleHeaderLines, setVisibleHeaderLines] = useState<number>(0)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [commandInput, setCommandInput] = useState<string>('')
   const [suggestion, setSuggestion] = useState<string>('')
   const [errorLine, setErrorLine] = useState<string>('')
   const [lastExecutedCommand, setLastExecutedCommand] = useState<string>('')
+  const [isContentLoading, setIsContentLoading] = useState<boolean>(false)
   
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -98,39 +98,40 @@ function App() {
     }
   }, [bootStep])
 
-  // Sequential Header Loading
+  // Simultaneous Loading (Header and Content)
   useEffect(() => {
     if (isReady) {
       setVisibleHeaderLines(0)
-      const timer = setInterval(() => {
-        setVisibleHeaderLines(prev => {
-          if (prev < headerLines.length) {
-            return prev + 1
-          }
-          clearInterval(timer)
-          return prev
-        })
-      }, SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD)
-      return () => clearInterval(timer)
-    }
-  }, [isReady, headerLines.length])
-
-  // Sequential Page Loading (Line-by-line)
-  useEffect(() => {
-    if (isReady && (visibleHeaderLines >= headerLines.length || currentPage !== 'MAIN')) {
       setVisibleLines(0)
+      setIsContentLoading(true)
+      
+      let headerCount = 0
+      let lineCount = 0
+      
       const timer = setInterval(() => {
-        setVisibleLines(prev => {
-          if (prev < currentItems.length + 1) { // +1 for the header
-            return prev + 1
-          }
+        let done = true
+        
+        if (headerCount < headerLines.length) {
+          headerCount++
+          setVisibleHeaderLines(headerCount)
+          done = false
+        }
+        
+        if (lineCount < currentItems.length + 1) {
+          lineCount++
+          setVisibleLines(lineCount)
+          done = false
+        }
+        
+        if (done) {
           clearInterval(timer)
-          return prev
-        })
+          setIsContentLoading(false)
+        }
       }, SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD)
+      
       return () => clearInterval(timer)
     }
-  }, [isReady, currentPage, currentItems.length, visibleHeaderLines, headerLines.length])
+  }, [isReady, currentPage, currentItems.length, headerLines.length])
 
   // Focus input on ready
   useEffect(() => {
@@ -162,15 +163,16 @@ function App() {
         setSuggestion('')
       }
     } else if (e.key === 'Enter') {
-      executeCommand(commandInput)
+      if (commandInput.trim().length === 0) {
+        // Empty prompt Enter executes selected item
+        const selectedItem = currentItems[selectedIndex]
+        if (selectedItem) executeCommand(selectedItem.name)
+      } else {
+        executeCommand(commandInput)
+      }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      if (lastExecutedCommand) {
-        setCommandInput(lastExecutedCommand)
-        setSuggestion('')
-      } else {
-        setSelectedIndex(prev => (prev > 0 ? prev - 1 : currentItems.length - 1))
-      }
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : currentItems.length - 1))
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
       setSelectedIndex(prev => (prev < currentItems.length - 1 ? prev + 1 : 0))
@@ -181,10 +183,6 @@ function App() {
     const cleanCmd = cmd.trim().toUpperCase()
     const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
     
-    if (cleanCmd.length > 0) {
-      setLastExecutedCommand(cleanCmd)
-    }
-
     // Check for ".." or "CD .."
     if (cleanCmd === backCmd || cleanCmd === `CD ${backCmd}`) {
       if (currentPage !== 'MAIN') {
@@ -192,6 +190,7 @@ function App() {
         setSelectedIndex(0)
         setCommandInput('')
         setSuggestion('')
+        setLastExecutedCommand('') // Clear history on page change
         return
       }
     }
@@ -200,19 +199,22 @@ function App() {
     const targetItem = currentItems.find(item => item.name.toUpperCase() === cleanCmd)
 
     if (targetItem) {
+      setLastExecutedCommand(cleanCmd)
       if (targetItem.name === SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME) {
         setCurrentPage('MAIN')
         setSelectedIndex(0)
+        setLastExecutedCommand('')
       } else if (targetItem.url) {
         window.open(targetItem.url, '_blank')
       } else if (targetItem.id) {
         setCurrentPage(targetItem.id)
         setSelectedIndex(0)
+        setLastExecutedCommand('')
       }
       setCommandInput('')
       setSuggestion('')
     } else if (cleanCmd.length > 0) {
-      setErrorLine(SYSTEM_CONFIG.UI_TEXT.ERROR_BAD_COMMAND)
+      setErrorLine(`${cleanCmd} : command or file not found`)
       setCommandInput('')
       setSuggestion('')
     }
@@ -222,6 +224,13 @@ function App() {
     setSelectedIndex(index)
     const item = currentItems[index]
     executeCommand(item.name)
+  }
+
+  const handlePathSegmentClick = (id: PageID) => {
+    setCurrentPage(id)
+    setSelectedIndex(0)
+    setLastExecutedCommand('')
+    setErrorLine('')
   }
 
   // --- RENDER HELPERS ---
@@ -243,12 +252,11 @@ function App() {
   )
 
   const renderRow = (item: ListingItem, index: number) => {
-    const isSelected = selectedIndex === index || hoverIndex === index;
+    const isSelected = selectedIndex === index;
     return (
       <div 
         key={`${item.name}-${index}`}
-        onMouseEnter={() => setHoverIndex(index)}
-        onMouseLeave={() => setHoverIndex(null)}
+        onMouseEnter={() => setSelectedIndex(index)}
         onClick={() => handleOptionClick(index)}
         style={{ 
           display: 'grid', 
@@ -266,15 +274,37 @@ function App() {
     )
   }
 
-  const getCurrentPath = () => {
-    const root = SYSTEM_CONFIG.SYSTEM.DRIVE_LETTER + '\\' + SYSTEM_CONFIG.SYSTEM.ROOT_PATH
-    return currentPage === 'MAIN' ? root : `${root}\\${currentPage}`
+  const renderBreadcrumbs = () => {
+    const rootPath = SYSTEM_CONFIG.SYSTEM.DRIVE_LETTER + '\\' + SYSTEM_CONFIG.SYSTEM.ROOT_PATH
+    return (
+      <span className="breadcrumbs">
+        <span 
+          onClick={() => handlePathSegmentClick('MAIN')}
+          className="breadcrumb-segment"
+          style={{ cursor: 'pointer', padding: '0 4px' }}
+        >
+          {rootPath}
+        </span>
+        {currentPage !== 'MAIN' && (
+          <>
+            <span>\</span>
+            <span 
+              onClick={() => handlePathSegmentClick(currentPage)}
+              className="breadcrumb-segment"
+              style={{ cursor: 'pointer', padding: '0 4px' }}
+            >
+              {currentPage}
+            </span>
+          </>
+        )}
+      </span>
+    )
   }
 
   const renderSpecializedContent = () => {
     if (currentPage.includes('MEDIA')) {
       return (
-        <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '1rem 0' }}>
+        <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '1rem 0', opacity: visibleLines > 0 ? 1 : 0 }}>
           <div style={{ width: '100%', aspectRatio: '16/9', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             [ MOVIE PLAYER PLACEHOLDER ]
           </div>
@@ -284,25 +314,24 @@ function App() {
     }
     if (currentPage.includes('ABOUT')) {
       return (
-        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap', opacity: visibleLines > 0 ? 1 : 0 }}>
           <div style={{ textAlign: 'center', borderBottom: '1px solid var(--terminal-green)', paddingBottom: '1rem', marginBottom: '1rem' }}>
             --- TEXT VIEWER ---
           </div>
           {currentItems.map((item, idx) => (
-            <div key={idx} style={{ marginBottom: '0.5rem' }}>{item.name}</div>
+            <div key={idx} style={{ marginBottom: '0.5rem', opacity: idx < visibleLines ? 1 : 0 }}>{item.name}</div>
           ))}
         </div>
       )
     }
     if (currentPage.includes('DISCO')) {
       return (
-        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', display: 'flex', flexDirection: 'column' }}>
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', display: 'flex', flexDirection: 'column', opacity: visibleLines > 0 ? 1 : 0 }}>
           <div style={{ borderBottom: '1px solid var(--terminal-green)', marginBottom: '1rem' }}>EXECUTING DISCOGRAPHY.EXE...</div>
           <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-            {/* App character interface */}
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem' }}>[ ALBUM_01 ]</div>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem' }}>[ ALBUM_02 ]</div>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem' }}>[ ALBUM_03 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleLines > 1 ? 1 : 0 }}>[ ALBUM_01 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleLines > 2 ? 1 : 0 }}>[ ALBUM_02 ]</div>
+            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleLines > 3 ? 1 : 0 }}>[ ALBUM_03 ]</div>
           </div>
         </div>
       )
@@ -335,7 +364,7 @@ function App() {
             <div className="directory-listing" style={{ marginTop: '1rem' }}>
               <div className="dim" style={{ marginBottom: '1rem' }}>
                 {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br/>
-                Directory of {getCurrentPath()}
+                Directory of {renderBreadcrumbs()}
               </div>
 
               {visibleLines > 0 && renderTableHead()}
@@ -350,19 +379,18 @@ function App() {
           )}
 
           <footer style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-            {/* Command History Display */}
             {lastExecutedCommand && (
               <div className="dim" style={{ marginBottom: '0.2rem' }}>
-                {getCurrentPath()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {lastExecutedCommand}
+                {renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {lastExecutedCommand}
               </div>
             )}
             
             {errorLine && <div style={{ marginBottom: '0.5rem' }}>{errorLine}</div>}
             
-            <div style={{ marginBottom: '1rem' }} /> {/* Space above prompt */}
+            <div style={{ marginBottom: '1rem' }} />
 
             <div className="prompt-line" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-              <span>{getCurrentPath()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL}&nbsp;</span>
+              <span>{renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL}&nbsp;</span>
               <div style={{ position: 'relative', flex: 1 }}>
                 <input
                   ref={inputRef}

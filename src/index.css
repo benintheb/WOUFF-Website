@@ -102,6 +102,11 @@ a:hover {
   color: var(--terminal-dim);
 }
 
+.breadcrumb-segment:hover {
+  background-color: var(--terminal-dim);
+  color: var(--terminal-bg);
+}
+
 .ascii-header {
   font-size: 0.8rem;
   line-height: 1;

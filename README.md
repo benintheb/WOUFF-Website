@@ -27,33 +27,35 @@ A minimal, artistic landing page for contact information, social media links, an
 ### **Log:**
 > 1. Fix link navigation to work with the `Enter` button.
 > 2. Implement specialized layouts for `.MOV` (embedded player), `.TXT` (text app), and `.EXE` (app character).
-> 3. Animate the ASCII "POTEAR" header line-by-line at startup.
+> 3. Animate ASCII header and directory listings simultaneously during page loads.
 > 4. Improve Mobile UX: Disable automatic keyboard pop-up when clicking links.
 > 5. Expand `config.ts`: Include favicon, website name, and SEO metadata.
-> 6. Enhance Prompt: Add command history (up arrow to recall) and show the last command above the prompt in dimmed color.
-> 7. Interactive Hover: Selection highlight follows mouse cursor and highlights items on hover.
+> 6. Enhance Prompt: Show last command above prompt (cleared on page change); remove `ArrowUp` recall to prevent list navigation clashes.
+> 7. Unified Selection: Mouse hover and keyboard selection now sync; highlight follows the mouse cursor.
+> 8. Smart Enter: Empty prompt `Enter` executes selected item; otherwise executes typed command.
+> 9. Interactive Breadcrumbs: Clickable path segments in the prompt with hover feedback for quick navigation.
 
 ---
 
 ### **Detailed Project Plan: Version 04**
 
-#### **1. Specialized File Handlers**
-- **Media (`.MOV`):** Create a terminal-styled video container. Layout: [Video Player] -> [Prompt] -> [Footer]. (Note: ASCII header is hidden for this view).
-- **Text (`.TXT`):** Create a "DOS Edit" style viewer for content-heavy pages. Layout: [Text Viewer] -> [Prompt] -> [Footer]. (Note: ASCII header is hidden for this view).
-- **Apps (`.EXE`):** Unique interactive layout for the discography. Layout: [App Interface] -> [Prompt] -> [Footer]. (Note: ASCII header is hidden for this view).
+#### **1. Specialized File Handlers & Loading**
+- **Simultaneous Loading:** Trigger header and list animations in parallel.
+- **Component Loading:** Apply the line-by-line "load" effect to media players and text containers.
+- **Media/Text/App Views:** Refined layouts that omit the ASCII header and focus on content.
 
-#### **2. Advanced Terminal Logic**
-- **Command Buffer:** Store the last executed command.
-- **Visual History:** Render the previous command line above the active prompt using `var(--terminal-dim)`.
-- **Recall:** Map `ArrowUp` to restore the last command string to the input.
-- **Header Animation:** Split the ASCII header into lines and stagger their appearance using the `PAGE_LINE_LOAD` speed.
+#### **2. Unified Interaction Model**
+- **Hover Sync:** Map `onMouseEnter` to `setSelectedIndex` for a seamless mouse/keyboard experience.
+- **Breadcrumb Navigation:** Transform the path display into interactive segments with hover-state styling (dimmed box background).
+- **Dual-Mode Enter:** Conditional logic for the `Enter` key based on prompt buffer state.
 
-#### **3. UX & Mobile Optimization**
-- **Input Management:** Ensure `inputMode="none"` or similar logic for non-text interactions to prevent keyboard intrusion on mobile links.
-- **Mouse Sync:** Bridge the gap between `selectedIndex` (keyboard) and `hoverIndex` (mouse) for a unified highlight effect.
+#### **3. Terminal & UX Refinements**
+- **Verbose Errors:** Update error display to include the faulty command string.
+- **History Management:** Logic to clear the "last command" display upon directory or page transitions.
+- **Operational Update:** Update `AGENTS.md` to prioritize user-centric UX thinking.
 
 #### **4. Global Metadata Config**
-- **Integration:** Sync `index.html` titles and icons with `SYSTEM_CONFIG` values via a script or React Helmet-style effect.
+- **Integration:** Sync `index.html` titles and icons with `SYSTEM_CONFIG` values.
 
 ---
 
