@@ -16,12 +16,14 @@ function App() {
   const [bootStep, setBootStep] = useState<number>(0)
   const [isReady, setIsReady] = useState<boolean>(false)
   const [currentPage, setCurrentPage] = useState<PageID>('MAIN')
+  const [prevPage, setPrevPage] = useState<PageID | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
   const [commandInput, setCommandInput] = useState<string>('')
   const [suggestion, setSuggestion] = useState<string>('')
   const [errorLine, setErrorLine] = useState<string>('')
   const [lastExecutedCommand, setLastExecutedCommand] = useState<string>('')
   const [loadTrigger, setLoadTrigger] = useState<number>(0)
+  const [forceFullLoad, setForceFullLoad] = useState<boolean>(false)
   
   // Animation state for sequential loading
   const [visibleHeaderLines, setVisibleHeaderLines] = useState<number>(0)
@@ -37,9 +39,20 @@ function App() {
 
   // --- DERIVED DATA ---
   const isSpecializedPage = currentPage !== 'MAIN' && currentPage !== 'LINKS';
+  const isLinksPage = currentPage === 'LINKS';
+  const isMainPage = currentPage === 'MAIN';
+
+  // Determine if we should perform a "Minimal Motion" load
+  const isMinimalLoad = useMemo(() => {
+    if (forceFullLoad) return false;
+    if (prevPage === null) return false;
+    const fromList = prevPage === 'MAIN' || prevPage === 'LINKS';
+    const toList = currentPage === 'MAIN' || currentPage === 'LINKS';
+    return fromList && toList;
+  }, [prevPage, currentPage, forceFullLoad]);
 
   const currentItems = useMemo((): ListingItem[] => {
-    if (currentPage === 'MAIN') {
+    if (isMainPage) {
       return [...SYSTEM_CONFIG.COMMANDS] as ListingItem[]
     }
     
@@ -52,16 +65,16 @@ function App() {
       }, 
       ...pageItems
     ] as ListingItem[]
-  }, [currentPage])
+  }, [currentPage, isMainPage])
 
   const availableCommands = useMemo(() => {
     const names = currentItems.map(item => item.name.toUpperCase())
-    if (currentPage !== 'MAIN') {
+    if (!isMainPage) {
       const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
       names.push(`CD ${backCmd}`, backCmd)
     }
     return names
-  }, [currentItems, currentPage])
+  }, [currentItems, isMainPage])
 
   // --- EFFECTS ---
   
@@ -105,51 +118,74 @@ function App() {
   useEffect(() => {
     if (!isReady) return;
 
-    // Reset visibility
-    setVisibleHeaderLines(0)
-    setIsInfoVisible(false)
-    setVisibleContentLines(0)
-    setIsPromptVisible(false)
-    setIsFooterVisible(false)
+    // Capture load type at effect start to prevent double triggers
+    const currentIsMinimal = isMinimalLoad;
 
-    let currentStep = 0;
+    // Reset visibility logic based on load type
+    if (currentIsMinimal) {
+      setVisibleContentLines(0);
+      setVisibleHeaderLines(headerLines.length);
+      setIsInfoVisible(true);
+      setIsPromptVisible(true);
+      setIsFooterVisible(true);
+    } else {
+      setVisibleHeaderLines(0);
+      setIsInfoVisible(false);
+      setVisibleContentLines(0);
+      setIsPromptVisible(false);
+      setIsFooterVisible(false);
+    }
+
+    let headerPtr = currentIsMinimal ? headerLines.length : 0;
+    let contentPtr = 0;
+    let infoShown = currentIsMinimal;
+    let promptShown = currentIsMinimal;
+    let footerShown = currentIsMinimal;
+
     const interval = SYSTEM_CONFIG.SPEEDS.PAGE_LINE_LOAD;
 
     const sequenceTimer = setInterval(() => {
-      // 1. Header (only for non-specialized pages)
-      if (!isSpecializedPage && currentStep < headerLines.length) {
-        setVisibleHeaderLines(prev => prev + 1);
-        currentStep++;
+      if (!isSpecializedPage && headerPtr < headerLines.length) {
+        headerPtr++;
+        setVisibleHeaderLines(headerPtr);
         return;
       }
 
-      // 2. Directory Info
-      if (!isInfoVisible) {
+      if (!infoShown) {
+        infoShown = true;
         setIsInfoVisible(true);
         return;
       }
 
-      // 3. Content Listing / Specialized Content
-      if (visibleContentLines < currentItems.length + 1) {
-        setVisibleContentLines(prev => prev + 1);
+      if (contentPtr < currentItems.length + 1) {
+        contentPtr++;
+        setVisibleContentLines(contentPtr);
         return;
       }
 
-      // 4. Prompt
-      if (!isPromptVisible) {
+      if (!promptShown) {
+        promptShown = true;
         setIsPromptVisible(true);
         return;
       }
 
-      // 5. Footer
-      if (!isFooterVisible) {
+      if (!footerShown) {
+        footerShown = true;
         setIsFooterVisible(true);
         clearInterval(sequenceTimer);
+        if (forceFullLoad) setForceFullLoad(false);
         return;
+      }
+
+      if (currentIsMinimal && contentPtr >= currentItems.length + 1) {
+        clearInterval(sequenceTimer);
+        if (forceFullLoad) setForceFullLoad(false);
       }
     }, interval);
 
-    return () => clearInterval(sequenceTimer);
+    return () => {
+      clearInterval(sequenceTimer);
+    };
   }, [isReady, currentPage, isSpecializedPage, currentItems.length, headerLines.length, loadTrigger]);
 
   // Focus input
@@ -164,7 +200,6 @@ function App() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase()
     setCommandInput(val)
-    // Error persists during typing as per Version 4 plan
 
     if (val.length > 0) {
       const found = availableCommands.find(cmd => cmd.startsWith(val))
@@ -202,7 +237,7 @@ function App() {
     const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
     
     if (cleanCmd === backCmd || cleanCmd === `CD ${backCmd}`) {
-      if (currentPage !== 'MAIN') {
+      if (!isMainPage) {
         changePage('MAIN')
         return
       }
@@ -211,7 +246,11 @@ function App() {
     const targetItem = currentItems.find(item => item.name.toUpperCase() === cleanCmd)
 
     if (targetItem) {
-      setLastExecutedCommand(cleanCmd)
+      // Do not show command history for SNS/External links
+      if (!targetItem.url) {
+        setLastExecutedCommand(cleanCmd)
+      }
+      
       setErrorLine('')
       if (targetItem.name === SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME) {
         changePage('MAIN')
@@ -230,19 +269,21 @@ function App() {
   }
 
   const changePage = (id: PageID) => {
+    setPrevPage(currentPage)
     setCurrentPage(id)
     setSelectedIndex(0)
     setLastExecutedCommand('')
     setErrorLine('')
     setCommandInput('')
     setSuggestion('')
-    // Trigger reload animation
     setLoadTrigger(prev => prev + 1)
   }
 
   const handlePathSegmentClick = (id: PageID) => {
     if (currentPage === id) {
-      // Reload current page animation
+      if (id === 'MAIN') {
+        setForceFullLoad(true);
+      }
       setLoadTrigger(prev => prev + 1)
     } else {
       changePage(id)
@@ -299,7 +340,7 @@ function App() {
         >
           {rootPath}
         </span>
-        {currentPage !== 'MAIN' && (
+        {!isMainPage && (
           <>
             <span>\</span>
             <span 
@@ -374,9 +415,9 @@ function App() {
             </header>
           )}
 
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', opacity: isInfoVisible ? 1 : 0 }}>
+          <div className="directory-container" style={{ opacity: isInfoVisible ? 1 : 0 }}>
             {isSpecializedPage ? renderSpecializedContent() : (
-              <div className="directory-listing" style={{ marginTop: '1rem' }}>
+              <div className="directory-listing">
                 <div className="dim" style={{ marginBottom: '1rem' }}>
                   {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br/>
                   {SYSTEM_CONFIG.UI_TEXT.DIRECTORY_OF}{renderBreadcrumbs()}
@@ -394,7 +435,7 @@ function App() {
             )}
           </div>
 
-          <footer style={{ marginTop: 'auto', paddingTop: '2rem', opacity: isPromptVisible ? 1 : 0 }}>
+          <footer className="terminal-footer" style={{ opacity: isPromptVisible ? 1 : 0 }}>
             {lastExecutedCommand && (
               <div className="dim" style={{ marginBottom: '0.2rem' }}>
                 {renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {lastExecutedCommand}
@@ -403,7 +444,7 @@ function App() {
             
             {errorLine && (
               <div className="dim" style={{ marginBottom: '0.5rem', color: 'var(--terminal-dim)' }}>
-                {SYSTEM_CONFIG.SYSTEM.DRIVE_LETTER}\WOUFF{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {errorLine}
+                {errorLine}
               </div>
             )}
             
@@ -420,7 +461,7 @@ function App() {
                   onKeyDown={handleKeyDown}
                   spellCheck={false}
                   autoFocus
-                  inputMode={currentPage === 'LINKS' || isSpecializedPage ? 'none' : 'text'}
+                  inputMode={isLinksPage || isSpecializedPage ? 'none' : 'text'}
                   style={{
                     background: 'transparent',
                     border: 'none',

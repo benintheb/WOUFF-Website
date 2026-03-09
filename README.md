@@ -27,22 +27,27 @@ A minimal, artistic landing page for contact information, social media links, an
 ### **Log:**
 > 1. Fix link navigation to work with the `Enter` button.
 > 2. Implement specialized layouts for `.MOV` (embedded player), `.TXT` (text app), and `.EXE` (app character).
-> 3. Animate ASCII header, directory listings, prompt, and footer in a unified top-to-bottom sequence.
-> 4. Improve Mobile UX: Disable automatic keyboard pop-up when clicking links.
-> 5. Expand `config.ts`: Centralize all new UI text, error templates, and metadata.
-> 6. Enhance Prompt: Show persistent, dimmed, all-caps error messages; remove `ArrowUp` recall.
-> 7. Unified Selection: Mouse hover and keyboard selection now sync; highlight follows the mouse cursor.
-> 8. Smart Enter: Empty prompt `Enter` executes selected item; otherwise executes typed command.
-> 9. Interactive Breadcrumbs: Clickable path segments that trigger page reloads with hover feedback.
+> 3. Animate ASCII header, directory listings, prompt, and footer in a unified, smooth top-to-bottom sequence on cold boot.
+> 4. **Minimal Motion Navigation:** When navigating between standard pages (e.g., MAIN to LINKS and back), only the changing list content undergoes the loading sequence. The header, breadcrumbs, prompt, and footer remain fixed and visible.
+> 5. Improve Mobile UX: Disable automatic keyboard pop-up when clicking links.
+> 6. Expand `config.ts`: Centralize all new UI text, error templates, and metadata.
+> 7. **Refined Error Display:** Show persistent, dimmed, all-caps error messages (`[INPUT] : COMMAND OR FILE NOT FOUND`) without the drive path prefix.
+> 8. Unified Selection: Mouse hover and keyboard selection now sync; highlight follows the mouse cursor.
+> 9. Smart Enter: Empty prompt `Enter` executes selected item; otherwise executes typed command.
+> 10. Interactive Breadcrumbs: Clickable path segments that trigger page reloads with hover feedback.
+> 11. **Layout Stability:** Implemented fixed height for the list container and absolute footer positioning to ensure UI elements stay in place during reloading.
+> 12. **Context-Aware Reloads:** Clicking the root segment `C:\WOUFF` while on the home page now triggers a full system reload animation.
+> 13. **Sync Animation Speeds:** Matched ASCII header loading speed with the directory list speed for a smoother, synchronized boot feel.
 
 ---
 
 ### **Detailed Project Plan: Version 04**
 
 #### **1. Specialized File Handlers & Sequential Loading**
-- **Unified Loading:** Coordinate a single animation timeline from [Header] -> [Info] -> [Content] -> [Prompt] -> [Footer].
+- **Unified Loading:** Coordinate a single animation timeline from [Header] -> [Info] -> [Content] -> [Prompt] -> [Footer] for the initial site load.
+- **State-Aware Transitions:** Implement logic to detect transitions between standard list pages. If the layout remains consistent (e.g., MAIN <-> LINKS), bypass header/footer/prompt animations and only trigger the line-by-line load for the new directory items.
+- **Force Reload:** Clicking the breadcrumb segment for the current root path (`C:\WOUFF` on MAIN) triggers a full-page animation reset.
 - **Component Loading:** Apply the line-by-line "load" effect to media players and text containers.
-- **Media/Text/App Views:** Refined layouts that omit the ASCII header and focus on content.
 
 #### **2. Unified Interaction Model**
 - **Hover Sync:** Map `onMouseEnter` to `setSelectedIndex` for a seamless mouse/keyboard experience.
@@ -50,7 +55,8 @@ A minimal, artistic landing page for contact information, social media links, an
 - **Dual-Mode Enter:** Conditional logic for the `Enter` key based on prompt buffer state.
 
 #### **3. Terminal & UX Refinements**
-- **Persistent All-Caps Errors:** Display `[INPUT] : COMMAND OR FILE NOT FOUND` in dimmed color; message persists during new input.
+- **Layout Architecture:** Use a dedicated height for the directory listing container and absolute positioning for the footer to prevent jumping during sequential loads.
+- **Clean All-Caps Errors:** Display `[INPUT] : COMMAND OR FILE NOT FOUND` in dimmed color; exclude drive prefix to reduce visual noise.
 - **Config Synchronization:** Move every hardcoded string and UI setting into `src/config.ts` to ensure project-wide unison.
 - **Operational Update:** Update `AGENTS.md` to prioritize user-centric UX thinking and approval-based workflows.
 

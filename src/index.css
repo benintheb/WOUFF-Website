@@ -65,7 +65,7 @@ body::before {
 
 @media (max-width: 768px) {
   .monitor {
-    padding: 20px 0; /* Keep top/bottom, remove left/right on mobile */
+    padding: 20px 10px; /* Keep top/bottom, small left/right on mobile */
   }
   
   body {
@@ -77,6 +77,21 @@ body::before {
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
+  min-height: 600px; /* Ensure space for content + footer */
+}
+
+/* Dedicated height for list to prevent jumpy layout */
+.directory-container {
+  min-height: 250px;
+  margin-top: 1rem;
+}
+
+/* Absolute footer to stay fixed during reloads */
+.terminal-footer {
+  margin-top: auto;
+  padding-top: 2rem;
+  width: 100%;
 }
 
 a {
