@@ -22,6 +22,64 @@ A minimal, artistic landing page for contact information, social media links, an
 
 # 📜 Daily Logs & Project Plans
 
+## 📅 26.03.28 | ver.05 - Real-World Integration & Automation
+
+edit:
+- under link folder, create subfolders for sns links/streaming platforms.
+- 
+
+### **Log:**
+> 1. Initialized Version 05: Transitioning from static terminal emulation to real-world asset integration.
+> 2. Defined data structures for global social and streaming links, sorted by global popularity.
+> 3. Outlined automation strategy for YouTube (latest video) and Discography (fastest API) fetching.
+> 4. Drafted "About Potear" content using themes from lyrics like "Back in Line" and "Man Down Man Up."
+> 5. Defined advanced navigation logic for ESC key and 'back' prompt.
+
+---
+
+### **Detailed Project Plan: Version 05**
+
+#### **1. Global Link Integration & Sorting**
+- **Sorted Platform List (Global Popularity):**
+    1. YouTube Music (https://music.youtube.com/channel/UCq3KuVtwvm-F3250CHpQzrw)
+    2. Spotify (https://open.spotify.com/artist/6I9gKch9kqOG4HI9EJsuST)
+    3. Apple Music (https://music.apple.com/us/artist/potear/1804801454)
+    4. Soundcloud (https://soundcloud.com/potear-music)
+    5. Tidal (https://tidal.com/artist/55959610)
+    6. Melon (https://www.melon.com/artist/timeline.htm?artistId=4296285)
+    7. Genie (https://www.genie.co.kr/detail/artistInfo?xxnm=80911522)
+    8. Vibe (https://vibe.naver.com/artist/9658217)
+    9. Bugs (https://music.bugs.co.kr/artist/20236050?wl_ref=list_ar_02_search)
+- **Socials:**
+    - Instagram (https://www.instagram.com/potearwouff)
+    - YouTube (https://www.youtube.com/@PotearWOUFF)
+    - X and TikTok: Clickable but non-functional (no action).
+
+#### **2. Advanced Navigation & Interaction**
+- **Back Logic:**
+    - `ESC` key: Returns to root from any page. If already at root, triggers a soft reload (load sequence only).
+    - `back` command: Returns to root from any page. If already at root, displays `ALREADY IN WOUFF_ROOT`.
+
+#### **3. Automation & APIs**
+- **YouTube API:** Automatically fetch and update the latest video from the channel.
+- **Discography API:** Fetch data from the most efficient platform on boot trigger to ensure self-preservation.
+
+#### **4. Identity & Narrative**
+- **About WOUFF:**
+    > It is not a label, it is not a company, it is not an entity.
+    > 
+    > It is a mindset, parallel vectors of choices, how we approach the world and each other.
+    > 
+    > Embrace bold, authentic, and intentional choices.
+    > 
+    > Approach the world with fearless creativity, connection, and a commitment to collective growth.
+    > 
+    > We owe us, friend or foe.
+    > 
+    > We are brought to you by WOUFF.
+- **About Potear:**
+    > non-conformity and resilience
+
 ## 📅 26.03.10 | ver.04 - Specialized Layouts & Interactive Polish
 
 ### **Log:**

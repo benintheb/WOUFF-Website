@@ -195,6 +195,34 @@ function App() {
     }
   }, [isPromptVisible])
 
+  // Global Key Listeners (ESC for Navigation)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (!isMainPage) {
+          changePage('MAIN')
+        } else if (isReady) {
+          // Soft reload from home page
+          setLoadTrigger(prev => prev + 1)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [isMainPage, isReady])
+
+  // Mock API Fetching Simulation
+  useEffect(() => {
+    if (isReady && (currentPage === 'MEDIA' || currentPage === 'DISCO')) {
+      // Architecture for future real API integration
+      const timer = setTimeout(() => {
+        // Here we would normally update state with fetched data
+        console.log(`[SYS] Automated fetch triggered for ${currentPage}`)
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [isReady, currentPage])
+
   // --- HANDLERS ---
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,7 +263,20 @@ function App() {
   const executeCommand = (cmd: string) => {
     const cleanCmd = cmd.trim().toUpperCase()
     const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
+    const promptBack = 'BACK'
     
+    if (cleanCmd === promptBack) {
+      if (isMainPage) {
+        setErrorLine('ALREADY IN WOUFF_ROOT')
+        setCommandInput('')
+        setSuggestion('')
+        return
+      } else {
+        changePage('MAIN')
+        return
+      }
+    }
+
     if (cleanCmd === backCmd || cleanCmd === `CD ${backCmd}`) {
       if (!isMainPage) {
         changePage('MAIN')
@@ -255,7 +296,10 @@ function App() {
       if (targetItem.name === SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME) {
         changePage('MAIN')
       } else if (targetItem.url) {
-        window.open(targetItem.url, '_blank')
+        if (targetItem.url !== '#') {
+          window.open(targetItem.url, '_blank')
+        }
+        // If URL is '#', it represents a non-functional link as per V5 plan
       } else if (targetItem.id) {
         changePage(targetItem.id)
       }
