@@ -6,7 +6,7 @@
   --scanline-opacity: 0.25;
   --glow-intensity: 0 0 10px rgba(85, 212, 63, 0.4);
   --header-margin-bottom: 2rem;
-  
+
   /* Layout Widths - Driven by ASCII Header Width */
   --content-width-pc: 800px;
   --content-width-tablet: 600px;
@@ -17,6 +17,15 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, and Opera */
 }
 
 body {
@@ -26,7 +35,8 @@ body {
   font-size: 1.5rem;
   line-height: 1.2;
   overflow: hidden;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,7 +66,7 @@ body::before {
   justify-content: center;
 }
 
-/* The Monitor Layout - Remains full size */
+/* The Monitor Layout - Centered on the page */
 .monitor {
   width: 100%;
   height: 100%;
@@ -65,19 +75,28 @@ body::before {
   padding: 40px 60px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  /* Center main content */
+  justify-content: center;
   position: relative;
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+/* Boot sequence aligned to the left */
+.bios {
+  align-self: flex-start;
+  width: 100%;
+  text-align: left;
 }
 
 /* Mode 1: PC Monitor (Standard) */
 .terminal-content {
   width: var(--content-width-pc);
-  margin: 0 auto;
   flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
-  min-height: 600px;
+  height: 100%;
 }
 
 /* Mode 2: Tablet */
@@ -85,40 +104,56 @@ body::before {
   .terminal-content {
     width: var(--content-width-tablet);
   }
+
+  .ascii-header {
+    margin-top: 15vh;
+    font-size: 1vw;
+    /* Adjusted for mobile width */
+  }
 }
 
 /* Mode 3: Mobile */
 @media (max-width: 768px) {
+  .ascii-header {
+    margin-top: 15vh;
+    font-size: 1vw;
+    /* Adjusted for mobile width */
+  }
+
   .monitor {
     padding: 20px 10px;
   }
-  
+
   body {
     font-size: 1.2rem;
   }
 
   .terminal-content {
     width: var(--content-width-mobile);
-    min-height: 500px;
   }
 }
 
-/* Dedicated height for list to prevent jumpy layout */
+/* Balanced vertical spacing */
 .directory-container {
-  min-height: 250px;
-  margin-top: 1rem;
+  margin-top: auto;
+  /* Push header up */
+  margin-bottom: auto;
+  /* Push footer down */
   width: 100%;
+  padding-right: 10px;
+  min-height: 0;
 }
 
 .directory-listing {
   width: 100%;
 }
 
-/* Absolute footer to stay fixed during reloads */
+/* Footer layout */
 .terminal-footer {
-  margin-top: auto;
-  padding-top: 2rem;
   width: 100%;
+  flex-shrink: 0;
+  padding-top: 1rem;
+  /* Smaller gap between list and prompt */
 }
 
 a {
@@ -136,8 +171,15 @@ a:hover {
 }
 
 @keyframes blink {
-  from, to { opacity: 1; }
-  50% { opacity: 0; }
+
+  from,
+  to {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 .dim {
@@ -149,15 +191,36 @@ a:hover {
   color: var(--terminal-bg);
 }
 
-.ascii-header {
-  font-size: min(1rem, 2vw); /* Updated per instructor's direct change */
-  line-height: 1;
+.disco-item {
+  transition: background-color 0.1s ease;
+}
 
+.disco-item:hover {
+  background-color: var(--terminal-green);
+  color: var(--terminal-bg) !important;
+}
+
+.disco-item:hover .dim {
+  color: var(--terminal-bg) !important;
+}
+
+.disco-item a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ascii-header {
+  font-size: 1rem;
+  /* Perfectly scaled to fit ~80 chars across the container width */
+  line-height: 1;
   white-space: pre;
-  margin-bottom: var(--header-margin-bottom);
   color: var(--terminal-green);
   text-shadow: var(--glow-intensity);
-  width: 100%; /* Spans the width of terminal-content */
+  width: 100%;
   text-align: center;
-  overflow-x: hidden;
+  overflow: hidden;
+  /* Ensure no scrollbars */
+  margin-top: 0;
+  letter-spacing: 0;
 }

@@ -76,8 +76,9 @@ export const SYSTEM_CONFIG = {
 ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓██████▓▒░ ░▒▓████████▓▒░▒▓███████▓▒░  
 ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
 ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
-░▒▓█▓▒░       ░▒▓██████▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░ 
+░▒▓█▓▒░       ░▒▓██████▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
                                                                                
+                                                                                                   
 `,
   },
 
@@ -89,11 +90,12 @@ export const SYSTEM_CONFIG = {
 
   // Main Directory Commands
   COMMANDS: [
-    { date: '03/28/2026', type: '<DIR>', name: 'LINKS', id: 'LINKS' },
-    { date: '03/28/2026', type: '     ', name: 'LATEST_MEDIA.MOV', id: 'MEDIA' },
-    { date: '03/28/2026', type: '     ', name: 'DISCOGRAPHY.EXE', id: 'DISCO' },
-    { date: '03/28/2026', type: '     ', name: 'ABOUT_POTEAR.TXT', id: 'ABOUT_P' },
-    { date: '03/28/2026', type: '     ', name: 'ABOUT_WOUFF.TXT', id: 'ABOUT_W' },
+    { date: '03/28/2026', type: '<DIR>', name: 'SNS_LINKS', id: 'SNS_LINKS' },
+    { date: '03/28/2026', type: '<DIR>', name: 'STREAMING_PLATFORMS', id: 'STREAMING_PLATFORMS' },
+    { date: '03/28/2026', type: '     ', name: 'LATEST_MEDIA.MOV', id: 'LATEST_MEDIA.MOV' },
+    { date: '03/28/2026', type: '     ', name: 'DISCOGRAPHY.EXE', id: 'DISCOGRAPHY.EXE' },
+    { date: '03/28/2026', type: '     ', name: 'ABOUT_POTEAR.TXT', id: 'ABOUT_POTEAR.TXT' },
+    { date: '03/28/2026', type: '     ', name: 'ABOUT_WOUFF.TXT', id: 'ABOUT_WOUFF.TXT' },
   ],
 
   // API Endpoints (Placeholders for Automation)
@@ -104,7 +106,13 @@ export const SYSTEM_CONFIG = {
 
   // Sub-page Content Definitions
   PAGES: {
-    LINKS: [
+    SNS_LINKS: [
+      { date: '03/28/2026', type: '     ', name: 'INSTAGRAM.LNK', url: 'https://www.instagram.com/potearwouff' },
+      { date: '03/28/2026', type: '     ', name: 'YOUTUBE.LNK', url: 'https://www.youtube.com/@PotearWOUFF' },
+      { date: '03/28/2026', type: '     ', name: 'X_TWITTER.LNK', url: '#' }, // No action
+      { date: '03/28/2026', type: '     ', name: 'TIKTOK.LNK', url: '#' }, // No action
+    ],
+    STREAMING_PLATFORMS: [
       { date: '03/28/2026', type: '     ', name: 'YOUTUBE_MUSIC.LNK', url: 'https://music.youtube.com/channel/UCq3KuVtwvm-F3250CHpQzrw' },
       { date: '03/28/2026', type: '     ', name: 'SPOTIFY.LNK', url: 'https://open.spotify.com/artist/6I9gKch9kqOG4HI9EJsuST' },
       { date: '03/28/2026', type: '     ', name: 'APPLE_MUSIC.LNK', url: 'https://music.apple.com/us/artist/potear/1804801454' },
@@ -114,37 +122,25 @@ export const SYSTEM_CONFIG = {
       { date: '03/28/2026', type: '     ', name: 'GENIE.LNK', url: 'https://www.genie.co.kr/detail/artistInfo?xxnm=80911522' },
       { date: '03/28/2026', type: '     ', name: 'VIBE.LNK', url: 'https://vibe.naver.com/artist/9658217' },
       { date: '03/28/2026', type: '     ', name: 'BUGS.LNK', url: 'https://music.bugs.co.kr/artist/20236050?wl_ref=list_ar_02_search' },
-      { date: '03/28/2026', type: '     ', name: 'INSTAGRAM.LNK', url: 'https://www.instagram.com/potearwouff' },
-      { date: '03/28/2026', type: '     ', name: 'YOUTUBE.LNK', url: 'https://www.youtube.com/@PotearWOUFF' },
-      { date: '03/28/2026', type: '     ', name: 'X_TWITTER.LNK', url: '#' }, // No action
-      { date: '03/28/2026', type: '     ', name: 'TIKTOK.LNK', url: '#' }, // No action
     ],
-    MEDIA: [
+    'LATEST_MEDIA.MOV': [
       { date: '03/28/2026', type: 'INFO ', name: 'FETCHING LATEST VIDEO...' },
       { date: '03/28/2026', type: 'STAT ', name: '[ AUTO-SYNC ACTIVE ]' },
     ],
-    DISCO: [
-      { date: '03/28/2026', type: 'INFO ', name: 'FETCHING DISCOGRAPHY...' },
-      { date: '03/28/2026', type: 'STAT ', name: '[ AUTO-SYNC ACTIVE ]' },
+    'DISCOGRAPHY.EXE': [
+      { date: '2026', type: 'EP/SINGLE', name: 'Go On Do Your Duty', url: '#', image: 'https://resources.tidal.com/images/dbf000e0/3f95/4b11/8c5f/6d264948b2d9/1280x1280.jpg' },
+      { date: '2025', type: 'EP/SINGLE', name: 'No Parachute', url: '#', image: 'https://resources.tidal.com/images/e1d7c981/4a87/485a/bd5f/826f6575d8ae/1280x1280.jpg' },
+      { date: '2025', type: 'EP/SINGLE', name: 'Jump Out The Ride', url: '#', image: 'https://resources.tidal.com/images/0ec1bf4b/91ff/42e1/8c69/9b5d7d020311/1280x1280.jpg' },
     ],
-    ABOUT_P: [
-      { date: '03/28/2026', type: '     ', name: 'He is not a product, he is not a trend, he is not a calculation.' },
-      { date: '03/28/2026', type: '     ', name: ' ' },
-      { date: '03/28/2026', type: '     ', name: 'He is the resonance of the abnormal, the unfiltered pulse of the unorthodox,' },
-      { date: '03/28/2026', type: '     ', name: 'and the unprecedented sound of a soul that refuses to stay in line.' },
-      { date: '03/28/2026', type: '     ', name: ' ' },
-      { date: '03/28/2026', type: '     ', name: 'From the corners of the noise to the peaks of the high,' },
-      { date: '03/28/2026', type: '     ', name: 'he translates the struggle into a rhythm of resilience.' },
-      { date: '03/28/2026', type: '     ', name: ' ' },
-      { date: '03/28/2026', type: '     ', name: 'Man down, man up, he carves his own path through the bullshit,' },
-      { date: '03/28/2026', type: '     ', name: 'driven by a commitment to raw truth and elevation that never tires.' },
-      { date: '03/28/2026', type: '     ', name: ' ' },
-      { date: '03/28/2026', type: '     ', name: 'He reads the world from the back to the front,' },
-      { date: '03/28/2026', type: '     ', name: 'searching for the frequency of the real.' },
-      { date: '03/28/2026', type: '     ', name: ' ' },
-      { date: '03/28/2026', type: '     ', name: 'This is the voice of Potear.' },
+    'ABOUT_POTEAR.TXT': [
+      { date: '04/02/2026', type: '     ', name: "Pot Ear is the literal translation of part of Potear's given Korean name: Hyun." },
+      { date: '04/02/2026', type: '     ', name: "It is a Chinese character meaning 'the handles of a pot'." },
+      { date: '04/02/2026', type: '     ', name: "They are called ears due to their resemblance to human ears." },
+      { date: '04/02/2026', type: '     ', name: "On a deeper semantic level, it signifies being useful." },
+      { date: '04/02/2026', type: '     ', name: "After all, a heated pot without handles would be very difficult to handle." },
+      { date: '04/02/2026', type: '     ', name: "A pot's handle is meant to be unnoticeable and plain, yet it performs an essential function at both the most mundane and monumental of times." },
     ],
-    ABOUT_W: [
+    'ABOUT_WOUFF.TXT': [
       { date: '03/28/2026', type: '     ', name: 'It is not a label, it is not a company, it is not an entity.' },
       { date: '03/28/2026', type: '     ', name: ' ' },
       { date: '03/28/2026', type: '     ', name: 'It is a mindset, parallel vectors of choices,' },

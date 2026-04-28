@@ -22,11 +22,52 @@ A minimal, artistic landing page for contact information, social media links, an
 
 # 📜 Daily Logs & Project Plans
 
-## 📅 26.03.28 | ver.05 - Real-World Integration & Automation
+## 📅 26.04.02 | ver.06 - UI Refinement & Directory Restructuring
 
-edit:
-- under link folder, create subfolders for sns links/streaming platforms.
-- 
+### **Log:**
+> - when analyzing and sorting out new versions, my exact log is to be added to the file. you do not alter the log.
+> - on the prompt line, the exact link is to be shown. ABOUT_POTEAR instead of ABOUT_P, and DISCOGRAPHY instead of DISCO. same for all others.
+> - create two folders SNS_LINKS, and STREAMING_PLATFORMS. and put the links in there accordingly
+> - when the list gets long, the potear ascii art becomes scrollable. do not make it scrollable.
+> - even when the list or the text in the text file becomes long the space between the content and the prompt should be fixed.
+> - when the user clicks the link, it should open in a new tab.
+> - put https://www.youtube.com/watch?v=Zz7PLwoX9_4 in the latest media section
+> - this is to be the about potear text file:
+>   Pot Ear is the literal translation of part of Potear's given Korean name: Hyun. 
+>   It is a Chinese character meaning 'the handles of a pot'. 
+>   They are called ears due to their resemblance to human ears. 
+>   On a deeper semantic level, it signifies being useful.
+>   After all, a heated pot without handles would be very difficult to handle. 
+>   A pot's handle is meant to be unnoticeable and plain, yet it performs an essential function at both the most mundane and monumental of times.
+> - get rid of all the scroll bars. fix the layout so that it does not need scroll bars. while keeping the distances between the contents.
+> - inside latest media page, the pathway name is not fixed. fix it and double check other path names.
+> - get discography pictures and album information from tidal.
+
+---
+
+### **Detailed Project Plan: Version 06**
+
+#### **1. Directory & Navigation Update**
+- **Folder Creation:** Restructure links into `SNS_LINKS/` and `STREAMING_PLATFORMS/` directories.
+- **Explicit Naming:** Ensure prompt and directory listings use full identifiers (e.g., `ABOUT_POTEAR`, `DISCOGRAPHY`).
+- **Latest Media:** Embed the specific YouTube URL: `https://www.youtube.com/watch?v=Zz7PLwoX9_4`.
+- **Text Content:** Update `ABOUT_POTEAR.TXT` with the corrected translation and meaning of "Hyun."
+- **Pathname Consistency:** Ensure breadcrumbs reflect the actual filename (e.g., `LATEST_MEDIA.MOV` instead of `MEDIA`).
+
+#### **2. UI & Layout Stability**
+- **Scrollbar Elimination:** Hide all scrollbars via CSS while ensuring the layout fits the screen without overflow by adjusting spacing and font sizes.
+- **Scroll Lock:** Keep the ASCII header fixed at the top.
+- **Spacing:** Standardize the vertical gap between the end of the content list and the command prompt.
+
+#### **3. Discography Expansion**
+- **Tidal Integration:** Update discography with real album data and imagery from Potear's Tidal artist profile.
+
+#### **4. Interaction Polish**
+- **External Links:** Force all external links to open in a new tab (`target="_blank"`).
+
+---
+
+## 📅 26.03.28 | ver.05 - Real-World Integration & Automation
 
 ### **Log:**
 > 1. Initialized Version 05: Transitioning from static terminal emulation to real-world asset integration.

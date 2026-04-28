@@ -38,16 +38,16 @@ function App() {
   const headerLines = useMemo(() => SYSTEM_CONFIG.HEADER.TEXT.split('\n'), [])
 
   // --- DERIVED DATA ---
-  const isSpecializedPage = currentPage !== 'MAIN' && currentPage !== 'LINKS';
-  const isLinksPage = currentPage === 'LINKS';
+  const isSpecializedPage = currentPage !== 'MAIN' && currentPage !== 'SNS_LINKS' && currentPage !== 'STREAMING_PLATFORMS';
+  const isLinksPage = currentPage === 'SNS_LINKS' || currentPage === 'STREAMING_PLATFORMS';
   const isMainPage = currentPage === 'MAIN';
 
   // Determine if we should perform a "Minimal Motion" load
   const isMinimalLoad = useMemo(() => {
     if (forceFullLoad) return false;
     if (prevPage === null) return false;
-    const fromList = prevPage === 'MAIN' || prevPage === 'LINKS';
-    const toList = currentPage === 'MAIN' || currentPage === 'LINKS';
+    const fromList = prevPage === 'MAIN' || prevPage === 'SNS_LINKS' || prevPage === 'STREAMING_PLATFORMS';
+    const toList = currentPage === 'MAIN' || currentPage === 'SNS_LINKS' || currentPage === 'STREAMING_PLATFORMS';
     return fromList && toList;
   }, [prevPage, currentPage, forceFullLoad]);
 
@@ -56,7 +56,7 @@ function App() {
       return [...SYSTEM_CONFIG.COMMANDS] as ListingItem[]
     }
     
-    const pageItems = SYSTEM_CONFIG.PAGES[currentPage]
+    const pageItems = (SYSTEM_CONFIG.PAGES as any)[currentPage] || []
     return [
       { 
         date: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }), 
@@ -213,7 +213,7 @@ function App() {
 
   // Mock API Fetching Simulation
   useEffect(() => {
-    if (isReady && (currentPage === 'MEDIA' || currentPage === 'DISCO')) {
+    if (isReady && (currentPage === 'LATEST_MEDIA.MOV' || currentPage === 'DISCOGRAPHY.EXE')) {
       // Architecture for future real API integration
       const timer = setTimeout(() => {
         // Here we would normally update state with fetched data
@@ -401,36 +401,54 @@ function App() {
   }
 
   const renderSpecializedContent = () => {
-    if (currentPage === 'MEDIA') {
+    if (currentPage === 'LATEST_MEDIA.MOV') {
       return (
-        <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '1rem 0' }}>
-          <div style={{ width: '100%', aspectRatio: '16/9', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            [ MOVIE PLAYER PLACEHOLDER ]
+        <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '0.5rem 0', overflow: 'hidden' }}>
+          <div style={{ width: '100%', maxWidth: '800px', aspectRatio: '16/9', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <iframe 
+              width="100%" 
+              height="100%" 
+              src="https://www.youtube.com/embed/Zz7PLwoX9_4?autoplay=1" 
+              title="YouTube video player" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allowFullScreen
+            ></iframe>
           </div>
-          <div style={{ marginTop: '1rem' }} className="dim">LATEST_MEDIA.MOV - PLAYING</div>
+          <div style={{ marginTop: '0.5rem' }} className="dim">LATEST_MEDIA.MOV - PLAYING</div>
         </div>
       )
     }
-    if (currentPage === 'ABOUT_P' || currentPage === 'ABOUT_W') {
+    if (currentPage === 'ABOUT_POTEAR.TXT' || currentPage === 'ABOUT_WOUFF.TXT') {
       return (
-        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
-          <div style={{ textAlign: 'center', borderBottom: '1px solid var(--terminal-green)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '1.5rem', margin: '0.5rem 0', overflow: 'hidden', whiteSpace: 'pre-wrap', fontSize: 'inherit', lineHeight: '1.4' }}>
+          <div style={{ textAlign: 'center', borderBottom: '1px solid var(--terminal-green)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
             --- TEXT VIEWER ---
           </div>
           {currentItems.map((item, idx) => (
-            <div key={idx} style={{ marginBottom: '0.5rem', opacity: idx < visibleContentLines ? 1 : 0 }}>{item.name}</div>
+            <div key={idx} style={{ marginBottom: '0.4rem', opacity: idx < visibleContentLines ? 1 : 0 }}>{item.name}</div>
           ))}
         </div>
       )
     }
-    if (currentPage === 'DISCO') {
+    if (currentPage === 'DISCOGRAPHY.EXE') {
       return (
-        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '2rem', margin: '1rem 0', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ borderBottom: '1px solid var(--terminal-green)', marginBottom: '1rem' }}>EXECUTING DISCOGRAPHY.EXE...</div>
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleContentLines > 1 ? 1 : 0 }}>[ ALBUM_01 ]</div>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleContentLines > 2 ? 1 : 0 }}>[ ALBUM_02 ]</div>
-            <div style={{ border: '1px dashed var(--terminal-dim)', padding: '1rem', opacity: visibleContentLines > 3 ? 1 : 0 }}>[ ALBUM_03 ]</div>
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '1rem', margin: '0.5rem 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ borderBottom: '1px solid var(--terminal-green)', marginBottom: '0.5rem', paddingBottom: '0.5rem' }}>EXECUTING DISCOGRAPHY.EXE...</div>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', padding: '0.5rem' }}>
+            {currentItems.filter(item => item.name !== '..').slice(0, 6).map((item, idx) => (
+              <div key={idx} className="disco-item" style={{ border: '1px dashed var(--terminal-dim)', padding: '0.5rem', opacity: idx < visibleContentLines ? 1 : 0, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <a href={item.url} target="_blank" rel="noopener noreferrer">
+                  {(item as any).image ? (
+                    <img src={(item as any).image} alt={item.name} style={{ width: '100%', maxWidth: '100px', margin: '0 auto 0.3rem auto', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{ width: '100%', maxWidth: '100px', margin: '0 auto 0.3rem auto', aspectRatio: '1/1', background: '#222' }} />
+                  )}
+                  <div style={{ fontSize: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                  <div className="dim" style={{ fontSize: 'inherit' }}>({item.date})</div>
+                </a>
+              </div>
+            ))}
           </div>
         </div>
       )
@@ -462,7 +480,7 @@ function App() {
           <div className="directory-container" style={{ opacity: isInfoVisible ? 1 : 0 }}>
             {isSpecializedPage ? renderSpecializedContent() : (
               <div className="directory-listing">
-                <div className="dim" style={{ marginBottom: '1rem' }}>
+                <div className="dim" style={{ marginBottom: '0.5rem' }}>
                   {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br/>
                   {SYSTEM_CONFIG.UI_TEXT.DIRECTORY_OF}{renderBreadcrumbs()}
                 </div>
@@ -481,19 +499,17 @@ function App() {
 
           <footer className="terminal-footer" style={{ opacity: isPromptVisible ? 1 : 0 }}>
             {lastExecutedCommand && (
-              <div className="dim" style={{ marginBottom: '0.2rem' }}>
+              <div className="dim" style={{ marginBottom: '0.1rem' }}>
                 {renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {lastExecutedCommand}
               </div>
             )}
             
             {errorLine && (
-              <div className="dim" style={{ marginBottom: '0.5rem', color: 'var(--terminal-dim)' }}>
+              <div className="dim" style={{ marginBottom: '0.2rem', color: 'var(--terminal-dim)' }}>
                 {errorLine}
               </div>
             )}
             
-            <div style={{ marginBottom: 'var(--header-margin-bottom)' }} />
-
             <div className="prompt-line" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
               <span>{renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL}&nbsp;</span>
               <div style={{ position: 'relative', flex: 1 }}>
@@ -537,7 +553,7 @@ function App() {
             </div>
             
             <div style={{ 
-              marginTop: '1rem', 
+              marginTop: '0.5rem', 
               borderTop: '1px solid var(--terminal-dim)', 
               paddingTop: '0.5rem', 
               fontSize: '1rem',
