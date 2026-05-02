@@ -117,6 +117,11 @@ body::before {
     margin-bottom: auto;
   }
 
+  /* Removes double-margin so header centers perfectly in the top half */
+  .ascii-header + .directory-container {
+    margin-top: 0;
+  }
+
   .monitor {
     padding: 10px 10px;
   }
