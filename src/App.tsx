@@ -11,6 +11,74 @@ interface ListingItem {
   url?: string
 }
 
+const MarqueeText = ({ text, isSelected }: { text: string, isSelected: boolean }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(false);
+  const [scrollAmount, setScrollAmount] = useState('0px');
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (containerRef.current) {
+        const parentWidth = containerRef.current.clientWidth;
+        const contentWidth = containerRef.current.scrollWidth;
+        if (contentWidth > parentWidth) {
+          setOverflows(true);
+          setScrollAmount(`-${contentWidth - parentWidth + 30}px`);
+        } else {
+          setOverflows(false);
+        }
+      }
+    };
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [text]);
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
+    
+    if (isSelected && overflows) {
+      timeoutId = setTimeout(() => {
+        setIsScrolled(true);
+        intervalId = setInterval(() => {
+          setIsScrolled(prev => !prev);
+        }, 3000);
+      }, 500);
+    } else {
+      setIsScrolled(false);
+    }
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [isSelected, overflows]);
+
+  return (
+    <div 
+      ref={containerRef} 
+      style={{ 
+        overflow: 'hidden', 
+        whiteSpace: 'nowrap', 
+        width: '100%',
+        textOverflow: (!isSelected) ? 'ellipsis' : 'clip' 
+      }}
+    >
+      <span 
+        style={{ 
+          display: (isSelected && overflows) ? 'inline-block' : 'inline',
+          transform: isScrolled ? `translateX(${scrollAmount})` : 'translateX(0)',
+          transition: (isSelected && overflows) ? 'transform 2.5s ease-in-out' : 'none'
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  )
+}
+
 function App() {
   // --- STATE ---
   const [bootStep, setBootStep] = useState<number>(0)
@@ -336,42 +404,7 @@ function App() {
 
   // --- RENDER HELPERS ---
 
-  const renderTableHead = () => (
-    <div style={{ 
-      display: 'grid', 
-      gridTemplateColumns: `${SYSTEM_CONFIG.VISUALS.LAYOUT.DATE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.TYPE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.NAME_COL_WIDTH}`, 
-      marginBottom: '0.5rem', 
-      borderBottom: '1px dashed var(--terminal-dim)', 
-      paddingBottom: '2px' 
-    }} className="dim">
-      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_DATE}</span>
-      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_TYPE}</span>
-      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_NAME}</span>
-    </div>
-  )
 
-  const renderRow = (item: ListingItem, index: number) => {
-    const isSelected = selectedIndex === index;
-    return (
-      <div 
-        key={`${item.name}-${index}`}
-        onMouseEnter={() => setSelectedIndex(index)}
-        onClick={() => executeCommand(item.name)}
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: `${SYSTEM_CONFIG.VISUALS.LAYOUT.DATE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.TYPE_COL_WIDTH} ${SYSTEM_CONFIG.VISUALS.LAYOUT.NAME_COL_WIDTH}`,
-          cursor: 'pointer',
-          backgroundColor: isSelected ? 'var(--terminal-green)' : 'transparent',
-          color: isSelected ? 'var(--terminal-bg)' : 'var(--terminal-green)',
-          padding: '2px 0'
-        }}
-      >
-        <span>{item.date}</span>
-        <span>{item.type}</span>
-        <span>{item.name}</span>
-      </div>
-    )
-  }
 
   const renderBreadcrumbs = () => {
     const rootPath = SYSTEM_CONFIG.SYSTEM.DRIVE_LETTER + '\\' + SYSTEM_CONFIG.SYSTEM.ROOT_PATH
@@ -421,7 +454,7 @@ function App() {
     }
     if (currentPage === 'ABOUT_POTEAR.TXT' || currentPage === 'ABOUT_WOUFF.TXT') {
       return (
-        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '1.5rem', margin: '0.5rem 0', overflow: 'hidden', whiteSpace: 'pre-wrap', fontSize: 'inherit', lineHeight: '1.4' }}>
+        <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '1.5rem', margin: '0.5rem 0', overflowY: 'auto', whiteSpace: 'pre-wrap', fontSize: 'inherit', lineHeight: '1.4' }}>
           <div style={{ textAlign: 'center', borderBottom: '1px solid var(--terminal-green)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
             --- TEXT VIEWER ---
           </div>
@@ -435,7 +468,7 @@ function App() {
       return (
         <div className="specialized-container" style={{ flex: 1, border: '2px solid var(--terminal-green)', padding: '1rem', margin: '0.5rem 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ borderBottom: '1px solid var(--terminal-green)', marginBottom: '0.5rem', paddingBottom: '0.5rem' }}>EXECUTING DISCOGRAPHY.EXE...</div>
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', padding: '0.5rem' }}>
+          <div className="disco-grid">
             {currentItems.filter(item => item.name !== '..').slice(0, 6).map((item, idx) => (
               <div key={idx} className="disco-item" style={{ border: '1px dashed var(--terminal-dim)', padding: '0.5rem', opacity: idx < visibleContentLines ? 1 : 0, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <a href={item.url} target="_blank" rel="noopener noreferrer">
@@ -459,14 +492,16 @@ function App() {
   return (
     <div className="monitor">
       {!isReady ? (
-        <section className="bios">
-          <div>{SYSTEM_CONFIG.BIOS.TITLE}</div>
-          <div>{SYSTEM_CONFIG.BIOS.COPYRIGHT}</div>
-          {bootStep > 0 && <div>{SYSTEM_CONFIG.BIOS.CPU_INFO}</div>}
-          {bootStep > 1 && <div>{SYSTEM_CONFIG.BIOS.MEMORY_INFO}</div>}
-          {bootStep > 2 && <div style={{ marginTop: '1rem' }}>{SYSTEM_CONFIG.BIOS.DISK_SEARCH}</div>}
-          {bootStep > 3 && <div>{SYSTEM_CONFIG.BIOS.BOOT_MESSAGE}</div>}
-        </section>
+        <div className="terminal-content">
+          <section className="bios">
+            <div>{SYSTEM_CONFIG.BIOS.TITLE}</div>
+            <div>{SYSTEM_CONFIG.BIOS.COPYRIGHT}</div>
+            {bootStep > 0 && <div>{SYSTEM_CONFIG.BIOS.CPU_INFO}</div>}
+            {bootStep > 1 && <div>{SYSTEM_CONFIG.BIOS.MEMORY_INFO}</div>}
+            {bootStep > 2 && <div style={{ marginTop: '1rem' }}>{SYSTEM_CONFIG.BIOS.DISK_SEARCH}</div>}
+            {bootStep > 3 && <div>{SYSTEM_CONFIG.BIOS.BOOT_MESSAGE}</div>}
+          </section>
+        </div>
       ) : (
         <div className="terminal-content">
           {!isSpecializedPage && (
@@ -485,14 +520,63 @@ function App() {
                   {SYSTEM_CONFIG.UI_TEXT.DIRECTORY_OF}{renderBreadcrumbs()}
                 </div>
 
-                {visibleContentLines > 0 && renderTableHead()}
-                
-                {currentItems.map((item, idx) => {
-                  if (idx < visibleContentLines - 1) {
-                    return renderRow(item, idx)
-                  }
-                  return null
-                })}
+                <div style={{ width: '100%' }}>
+                  {visibleContentLines > 0 && (
+                    <div className="dim" style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '1fr 1fr minmax(0, 1fr)', 
+                      marginBottom: '0.5rem', 
+                      borderBottom: '1px dashed var(--terminal-dim)', 
+                      paddingBottom: '2px',
+                      paddingLeft: '4px'
+                    }}>
+                      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_DATE}</span>
+                      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_TYPE}</span>
+                      <span>{SYSTEM_CONFIG.UI_TEXT.TABLE_HEADER_NAME}</span>
+                    </div>
+                  )}
+                  {currentItems.map((item, idx) => {
+                    if (idx < visibleContentLines - 1) {
+                      const isSelected = selectedIndex === idx;
+                      const bg = isSelected ? 'var(--terminal-green)' : 'transparent';
+                      const color = isSelected ? 'var(--terminal-bg)' : 'var(--terminal-green)';
+                      return (
+                        <div 
+                          key={`${item.name}-${idx}`}
+                          onMouseEnter={() => {
+                            const isHoverDevice = window.matchMedia('(hover: hover)').matches;
+                            if (isHoverDevice) setSelectedIndex(idx);
+                          }}
+                          onClick={() => {
+                            const isHoverDevice = window.matchMedia('(hover: hover)').matches;
+                            if (isHoverDevice) {
+                              executeCommand(item.name);
+                            } else {
+                              if (selectedIndex === idx) {
+                                executeCommand(item.name);
+                              } else {
+                                setSelectedIndex(idx);
+                              }
+                            }
+                          }}
+                          style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: '1fr 1fr minmax(0, 1fr)',
+                            cursor: 'pointer',
+                            backgroundColor: bg,
+                            color: color,
+                            padding: '2px 0 2px 4px'
+                          }}
+                        >
+                          <span style={{ paddingRight: '1rem', whiteSpace: 'nowrap' }}>{item.date}</span>
+                          <span style={{ paddingRight: '1rem', whiteSpace: 'nowrap' }}>{item.type}</span>
+                          <MarqueeText text={item.name} isSelected={isSelected} />
+                        </div>
+                      )
+                    }
+                    return null
+                  })}
+                </div>
               </div>
             )}
           </div>
