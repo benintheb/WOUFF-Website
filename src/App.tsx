@@ -36,8 +36,8 @@ const MarqueeText = ({ text, isSelected }: { text: string, isSelected: boolean }
   }, [text]);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    let intervalId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let intervalId: ReturnType<typeof setInterval>;
     
     if (isSelected && overflows) {
       timeoutId = setTimeout(() => {
