@@ -14,17 +14,17 @@ interface ListingItem {
 const MarqueeText = ({ text, isSelected }: { text: string, isSelected: boolean }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [overflows, setOverflows] = useState(false);
-  const [scrollAmount, setScrollAmount] = useState('0px');
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [metrics, setMetrics] = useState({ contentWidth: 0, parentWidth: 0 });
+  const [animState, setAnimState] = useState({ pos: 0, duration: 0 });
 
   useEffect(() => {
     const checkOverflow = () => {
       if (containerRef.current) {
-        const parentWidth = containerRef.current.clientWidth;
-        const contentWidth = containerRef.current.scrollWidth;
-        if (contentWidth > parentWidth) {
+        const pWidth = containerRef.current.clientWidth;
+        const cWidth = containerRef.current.scrollWidth;
+        if (cWidth > pWidth) {
           setOverflows(true);
-          setScrollAmount(`-${contentWidth - parentWidth + 30}px`);
+          setMetrics({ contentWidth: cWidth, parentWidth: pWidth });
         } else {
           setOverflows(false);
         }
@@ -36,41 +36,58 @@ const MarqueeText = ({ text, isSelected }: { text: string, isSelected: boolean }
   }, [text]);
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-    let intervalId: ReturnType<typeof setInterval>;
-    
-    if (isSelected && overflows) {
-      timeoutId = setTimeout(() => {
-        setIsScrolled(true);
-        intervalId = setInterval(() => {
-          setIsScrolled(prev => !prev);
-        }, 3000);
-      }, 500);
-    } else {
-      setIsScrolled(false);
-    }
-    
-    return () => {
-      clearTimeout(timeoutId);
-      clearInterval(intervalId);
+    let isMounted = true;
+
+    const runLoop = async () => {
+      if (!isSelected || !overflows) {
+        setAnimState({ pos: 0, duration: 0 });
+        return;
+      }
+
+      const speed = 30; // ms per pixel (reading speed)
+
+      while (isMounted) {
+        // 1. Rest at 0 so user can read the start
+        setAnimState({ pos: 0, duration: 0 });
+        await new Promise(r => setTimeout(r, 1500));
+        if (!isMounted) break;
+
+        // 2. Scroll left until it completely exits
+        setAnimState({ pos: -metrics.contentWidth - 20, duration: (metrics.contentWidth + 20) * speed });
+        await new Promise(r => setTimeout(r, (metrics.contentWidth + 20) * speed));
+        if (!isMounted) break;
+
+        // 3. Teleport to the right edge (invisible)
+        setAnimState({ pos: metrics.parentWidth + 20, duration: 0 });
+        await new Promise(r => setTimeout(r, 50)); // wait for browser to apply the instant transform
+        if (!isMounted) break;
+
+        // 4. Scroll left from right edge back to 0
+        setAnimState({ pos: 0, duration: (metrics.parentWidth + 20) * speed });
+        await new Promise(r => setTimeout(r, (metrics.parentWidth + 20) * speed));
+      }
     };
-  }, [isSelected, overflows]);
+
+    runLoop();
+
+    return () => { isMounted = false; };
+  }, [isSelected, overflows, metrics]);
 
   return (
-    <div 
-      ref={containerRef} 
-      style={{ 
-        overflow: 'hidden', 
-        whiteSpace: 'nowrap', 
+    <div
+      ref={containerRef}
+      style={{
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
         width: '100%',
-        textOverflow: (!isSelected) ? 'ellipsis' : 'clip' 
+        textOverflow: (!isSelected) ? 'ellipsis' : 'clip'
       }}
     >
-      <span 
-        style={{ 
+      <span
+        style={{
           display: (isSelected && overflows) ? 'inline-block' : 'inline',
-          transform: isScrolled ? `translateX(${scrollAmount})` : 'translateX(0)',
-          transition: (isSelected && overflows) ? 'transform 2.5s ease-in-out' : 'none'
+          transform: `translateX(${animState.pos}px)`,
+          transition: animState.duration > 0 ? `transform ${animState.duration}ms linear` : 'none'
         }}
       >
         {text}
@@ -92,7 +109,7 @@ function App() {
   const [lastExecutedCommand, setLastExecutedCommand] = useState<string>('')
   const [loadTrigger, setLoadTrigger] = useState<number>(0)
   const [forceFullLoad, setForceFullLoad] = useState<boolean>(false)
-  
+
   // Animation state for sequential loading
   const [visibleHeaderLines, setVisibleHeaderLines] = useState<number>(0)
   const [isInfoVisible, setIsInfoVisible] = useState<boolean>(false)
@@ -123,14 +140,14 @@ function App() {
     if (isMainPage) {
       return [...SYSTEM_CONFIG.COMMANDS] as ListingItem[]
     }
-    
+
     const pageItems = (SYSTEM_CONFIG.PAGES as any)[currentPage] || []
     return [
-      { 
-        date: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }), 
-        type: SYSTEM_CONFIG.SYSTEM.BACK_DIR_TYPE, 
-        name: SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME 
-      }, 
+      {
+        date: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+        type: SYSTEM_CONFIG.SYSTEM.BACK_DIR_TYPE,
+        name: SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME
+      },
       ...pageItems
     ] as ListingItem[]
   }, [currentPage, isMainPage])
@@ -145,13 +162,13 @@ function App() {
   }, [currentItems, isMainPage])
 
   // --- EFFECTS ---
-  
+
   // Metadata & Visuals
   useEffect(() => {
     document.title = SYSTEM_CONFIG.METADATA.TITLE;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute('content', SYSTEM_CONFIG.METADATA.DESCRIPTION);
-    
+
     let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
     if (!link) {
       link = document.createElement('link');
@@ -173,7 +190,7 @@ function App() {
   useEffect(() => {
     if (bootStep < 5) {
       const { BOOT_STEP_MIN, BOOT_STEP_MAX } = SYSTEM_CONFIG.SPEEDS
-      const timer = setTimeout(() => setBootStep(bootStep + 1), 
+      const timer = setTimeout(() => setBootStep(bootStep + 1),
         BOOT_STEP_MIN + Math.random() * (BOOT_STEP_MAX - BOOT_STEP_MIN))
       return () => clearTimeout(timer)
     } else {
@@ -332,7 +349,7 @@ function App() {
     const cleanCmd = cmd.trim().toUpperCase()
     const backCmd = SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME.toUpperCase()
     const promptBack = 'BACK'
-    
+
     if (cleanCmd === promptBack) {
       if (isMainPage) {
         setErrorLine('ALREADY IN WOUFF_ROOT')
@@ -359,7 +376,7 @@ function App() {
       if (!targetItem.url) {
         setLastExecutedCommand(cleanCmd)
       }
-      
+
       setErrorLine('')
       if (targetItem.name === SYSTEM_CONFIG.SYSTEM.BACK_DIR_NAME) {
         changePage('MAIN')
@@ -410,7 +427,7 @@ function App() {
     const rootPath = SYSTEM_CONFIG.SYSTEM.DRIVE_LETTER + '\\' + SYSTEM_CONFIG.SYSTEM.ROOT_PATH
     return (
       <span className="breadcrumbs">
-        <span 
+        <span
           onClick={() => handlePathSegmentClick('MAIN')}
           className="breadcrumb-segment"
           style={{ cursor: 'pointer', padding: '0 4px' }}
@@ -420,7 +437,7 @@ function App() {
         {!isMainPage && (
           <>
             <span>\</span>
-            <span 
+            <span
               onClick={() => handlePathSegmentClick(currentPage)}
               className="breadcrumb-segment"
               style={{ cursor: 'pointer', padding: '0 4px' }}
@@ -438,13 +455,13 @@ function App() {
       return (
         <div className="specialized-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--terminal-green)', padding: '1rem', margin: '0.5rem 0', overflow: 'hidden' }}>
           <div style={{ width: '100%', maxWidth: '800px', aspectRatio: '16/9', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <iframe 
-              width="100%" 
-              height="100%" 
-              src="https://www.youtube.com/embed/Zz7PLwoX9_4?autoplay=1" 
-              title="YouTube video player" 
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            <iframe
+              width="100%"
+              height="100%"
+              src="https://www.youtube.com/embed/Zz7PLwoX9_4?autoplay=1"
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             ></iframe>
           </div>
@@ -516,17 +533,17 @@ function App() {
             {isSpecializedPage ? renderSpecializedContent() : (
               <div className="directory-listing">
                 <div className="dim" style={{ marginBottom: '0.5rem' }}>
-                  {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br/>
+                  {SYSTEM_CONFIG.SYSTEM.VOLUME_LABEL}<br />
                   {SYSTEM_CONFIG.UI_TEXT.DIRECTORY_OF}{renderBreadcrumbs()}
                 </div>
 
                 <div style={{ width: '100%' }}>
                   {visibleContentLines > 0 && (
-                    <div className="dim" style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: '1fr 1fr minmax(0, 1fr)', 
-                      marginBottom: '0.5rem', 
-                      borderBottom: '1px dashed var(--terminal-dim)', 
+                    <div className="dim" style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr minmax(0, 1fr)',
+                      marginBottom: '0.5rem',
+                      borderBottom: '1px dashed var(--terminal-dim)',
                       paddingBottom: '2px',
                       paddingLeft: '4px'
                     }}>
@@ -541,7 +558,7 @@ function App() {
                       const bg = isSelected ? 'var(--terminal-green)' : 'transparent';
                       const color = isSelected ? 'var(--terminal-bg)' : 'var(--terminal-green)';
                       return (
-                        <div 
+                        <div
                           key={`${item.name}-${idx}`}
                           onMouseEnter={() => {
                             const isHoverDevice = window.matchMedia('(hover: hover)').matches;
@@ -559,8 +576,8 @@ function App() {
                               }
                             }
                           }}
-                          style={{ 
-                            display: 'grid', 
+                          style={{
+                            display: 'grid',
                             gridTemplateColumns: '1fr 1fr minmax(0, 1fr)',
                             cursor: 'pointer',
                             backgroundColor: bg,
@@ -587,13 +604,13 @@ function App() {
                 {renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL} {lastExecutedCommand}
               </div>
             )}
-            
+
             {errorLine && (
               <div className="dim" style={{ marginBottom: '0.2rem', color: 'var(--terminal-dim)' }}>
                 {errorLine}
               </div>
             )}
-            
+
             <div className="prompt-line" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
               <span>{renderBreadcrumbs()}{SYSTEM_CONFIG.SYSTEM.PROMPT_SYMBOL}&nbsp;</span>
               <div style={{ position: 'relative', flex: 1 }}>
@@ -635,13 +652,13 @@ function App() {
                 )}
               </div>
             </div>
-            
-            <div style={{ 
-              marginTop: '0.5rem', 
-              borderTop: '1px solid var(--terminal-dim)', 
-              paddingTop: '0.5rem', 
+
+            <div style={{
+              marginTop: '0.5rem',
+              borderTop: '1px solid var(--terminal-dim)',
+              paddingTop: '0.5rem',
               fontSize: '1rem',
-              opacity: isFooterVisible ? 1 : 0 
+              opacity: isFooterVisible ? 1 : 0
             }} className="dim">
               {SYSTEM_CONFIG.FOOTER.COPYRIGHT}
             </div>
