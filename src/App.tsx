@@ -488,15 +488,15 @@ function App() {
           <div className="disco-grid">
             {currentItems.filter(item => item.name !== '..').slice(0, 6).map((item, idx) => (
               <div key={idx} className="disco-item" style={{ border: '1px dashed var(--terminal-dim)', padding: '0.5rem', opacity: idx < visibleContentLines ? 1 : 0, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <a href={item.url} target="_blank" rel="noopener noreferrer">
+                <div style={{ width: '100%', height: '100%' }}>
                   {(item as any).image ? (
-                    <img src={(item as any).image} alt={item.name} style={{ width: '100%', maxWidth: '100px', margin: '0 auto 0.3rem auto', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }} />
+                    <img src={(item as any).image} alt={item.name} style={{ width: '100%', maxWidth: '100%', margin: '0 auto 0.5rem auto', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }} />
                   ) : (
-                    <div style={{ width: '100%', maxWidth: '100px', margin: '0 auto 0.3rem auto', aspectRatio: '1/1', background: '#222' }} />
+                    <div style={{ width: '100%', maxWidth: '100%', margin: '0 auto 0.5rem auto', aspectRatio: '1/1', background: '#222' }} />
                   )}
                   <div style={{ fontSize: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                   <div className="dim" style={{ fontSize: 'inherit' }}>({item.date})</div>
-                </a>
+                </div>
               </div>
             ))}
           </div>

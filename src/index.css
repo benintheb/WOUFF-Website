@@ -241,9 +241,21 @@ a:hover {
 }
 
 @keyframes marquee-bounce {
-  0%, 15% { transform: translateX(0); }
-  45%, 55% { transform: translateX(var(--scroll-amount)); }
-  85%, 100% { transform: translateX(0); }
+
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+
+  45%,
+  55% {
+    transform: translateX(var(--scroll-amount));
+  }
+
+  85%,
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .marquee-active {
